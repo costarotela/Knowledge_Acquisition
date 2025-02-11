@@ -1,0 +1,100 @@
+site_name: Knowledge Acquisition Agent
+site_description: Documentation for the Knowledge Acquisition Agent project
+site_author: Pablo
+repo_url: https://github.com/pablo/knowledge-acquisition
+
+theme:
+  name: material
+  features:
+    - navigation.tabs
+    - navigation.sections
+    - navigation.top
+    - search.suggest
+    - search.highlight
+  palette:
+    - scheme: default
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/toggle-switch-off-outline
+        name: Switch to dark mode
+    - scheme: slate
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/toggle-switch
+        name: Switch to light mode
+
+nav:
+  - Home: index.md
+  - Architecture:
+    - Overview: architecture/overview.md
+    - Components: architecture/components.md
+    - Data Flow: architecture/data-flow.md
+  - User Guide:
+    - Getting Started: guide/getting-started.md
+    - Configuration: guide/configuration.md
+    - Examples: guide/examples.md
+  - API Reference:
+    - Scrapers: api/scrapers.md
+    - Embeddings: api/embeddings.md
+    - RAG: api/rag.md
+  - Project Status:
+    - Overview: status/overview.md
+    - Roadmap: status/roadmap.md
+    - Changelog: status/changelog.md
+
+markdown_extensions:
+  - admonition
+  - codehilite
+  - footnotes
+  - meta
+  - toc:
+      permalink: true
+  - pymdownx.arithmatex
+  - pymdownx.betterem:
+      smart_enable: all
+  - pymdownx.caret
+  - pymdownx.critic
+  - pymdownx.details
+  - pymdownx.emoji:
+      emoji_index: !!python/name:materialx.emoji.twemoji
+      emoji_generator: !!python/name:materialx.emoji.to_svg
+  - pymdownx.highlight
+  - pymdownx.inlinehilite
+  - pymdownx.magiclink
+  - pymdownx.mark
+  - pymdownx.smartsymbols
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+  - pymdownx.tasklist:
+      custom_checkbox: true
+  - pymdownx.tilde
+
+plugins:
+  - search
+  - minify:
+      minify_html: true
+  - git-revision-date-localized:
+      type: datetime
+  - mkdocstrings:
+      default_handler: python
+      handlers:
+        python:
+          rendering:
+            show_source: true
+      watch:
+        - src
+
+extra:
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/pablo/knowledge-acquisition
+    - icon: fontawesome/brands/python
+      link: https://pypi.org/project/knowledge-acquisition/
+  
+  version:
+    provider: mike

@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Asistente Nutricional</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        
+        .container {
+            background-color: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .status {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 5px;
+            text-align: center;
+        }
+        
+        .status.listening {
+            background-color: #e8f5e9;
+            color: #2e7d32;
+        }
+        
+        .status.processing {
+            background-color: #fff3e0;
+            color: #f57c00;
+        }
+        
+        .status.error {
+            background-color: #ffebee;
+            color: #c62828;
+        }
+        
+        .transcript {
+            margin: 20px 0;
+            padding: 15px;
+            background-color: #f8f9fa;
+            border-radius: 5px;
+        }
+        
+        .response {
+            margin: 20px 0;
+            padding: 15px;
+            background-color: #e3f2fd;
+            border-radius: 5px;
+        }
+        
+        button {
+            background-color: #1976d2;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.3s;
+        }
+        
+        button:hover {
+            background-color: #1565c0;
+        }
+        
+        button:disabled {
+            background-color: #bdbdbd;
+            cursor: not-allowed;
+        }
+        
+        .visualizer {
+            width: 100%;
+            height: 100px;
+            background-color: #f8f9fa;
+            margin: 20px 0;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Asistente Nutricional</h1>
+        <div id="status" class="status">Listo para escuchar</div>
+        
+        <button id="startButton">Iniciar Grabación</button>
+        <button id="stopButton" disabled>Detener Grabación</button>
+        
+        <canvas id="visualizer" class="visualizer"></canvas>
+        
+        <div id="transcript" class="transcript">
+            <strong>Tu pregunta:</strong>
+            <p id="transcriptText">--</p>
+        </div>
+        
+        <div id="response" class="response">
+            <strong>Respuesta:</strong>
+            <p id="responseText">--</p>
+        </div>
+    </div>
+
+    <script>
+        let ws;
+        let mediaRecorder;
+        let audioContext;
+        let analyser;
+        let isRecording = false;
+        
+        const startButton = document.getElementById('startButton');
+        const stopButton = document.getElementById('stopButton');
+        const status = document.getElementById('status');
+        const transcriptText = document.getElementById('transcriptText');
+        const responseText = document.getElementById('responseText');
+        const canvas = document.getElementById('visualizer');
+        const canvasCtx = canvas.getContext('2d');
+        
+        function initWebSocket() {
+            ws = new WebSocket('ws://localhost:8000/ws');
+            
+            ws.onopen = () => {
+                console.log('WebSocket conectado');
+                startButton.disabled = false;
+            };
+            
+            ws.onmessage = (event) => {
+                const data = JSON.parse(event.data);
+                
+                if (data.type === 'transcription') {
+                    transcriptText.textContent = data.text;
+                } else if (data.type === 'response') {
+                    responseText.textContent = data.text;
+                }
+            };
+            
+            ws.onerror = (error) => {
+                console.error('Error WebSocket:', error);
+                status.textContent = 'Error de conexión';
+                status.className = 'status error';
+            };
+            
+            ws.onclose = () => {
+                console.log('WebSocket desconectado');
+                setTimeout(initWebSocket, 1000);
+            };
+        }
+        
+        async function startRecording() {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                
+                // Configurar visualizador
+                audioContext = new AudioContext();
+                const source = audioContext.createMediaStreamSource(stream);
+                analyser = audioContext.createAnalyser();
+                analyser.fftSize = 2048;
+                source.connect(analyser);
+                
+                mediaRecorder = new MediaRecorder(stream);
+                
+                mediaRecorder.ondataavailable = (event) => {
+                    if (event.data.size > 0 && ws.readyState === WebSocket.OPEN) {
+                        ws.send(event.data);
+                    }
+                };
+                
+                mediaRecorder.start(100);
+                isRecording = true;
+                
+                status.textContent = 'Escuchando...';
+                status.className = 'status listening';
+                startButton.disabled = true;
+                stopButton.disabled = false;
+                
+                // Iniciar visualización
+                drawVisualizer();
+                
+            } catch (error) {
+                console.error('Error iniciando grabación:', error);
+                status.textContent = 'Error al acceder al micrófono';
+                status.className = 'status error';
+            }
+        }
+        
+        function stopRecording() {
+            if (mediaRecorder && isRecording) {
+                mediaRecorder.stop();
+                isRecording = false;
+                
+                status.textContent = 'Grabación detenida';
+                status.className = 'status';
+                startButton.disabled = false;
+                stopButton.disabled = true;
+                
+                // Detener visualizador
+                if (audioContext) {
+                    audioContext.close();
+                }
+            }
+        }
+        
+        function drawVisualizer() {
+            if (!isRecording) return;
+            
+            const bufferLength = analyser.frequencyBinCount;
+            const dataArray = new Uint8Array(bufferLength);
+            
+            function draw() {
+                if (!isRecording) return;
+                
+                requestAnimationFrame(draw);
+                analyser.getByteTimeDomainData(dataArray);
+                
+                canvasCtx.fillStyle = '#f8f9fa';
+                canvasCtx.fillRect(0, 0, canvas.width, canvas.height);
+                canvasCtx.lineWidth = 2;
+                canvasCtx.strokeStyle = '#1976d2';
+                canvasCtx.beginPath();
+                
+                const sliceWidth = canvas.width * 1.0 / bufferLength;
+                let x = 0;
+                
+                for (let i = 0; i < bufferLength; i++) {
+                    const v = dataArray[i] / 128.0;
+                    const y = v * canvas.height / 2;
+                    
+                    if (i === 0) {
+                        canvasCtx.moveTo(x, y);
+                    } else {
+                        canvasCtx.lineTo(x, y);
+                    }
+                    
+                    x += sliceWidth;
+                }
+                
+                canvasCtx.lineTo(canvas.width, canvas.height / 2);
+                canvasCtx.stroke();
+            }
+            
+            draw();
+        }
+        
+        startButton.onclick = startRecording;
+        stopButton.onclick = stopRecording;
+        
+        // Iniciar WebSocket al cargar la página
+        initWebSocket();
+    </script>
+</body>
+</html>

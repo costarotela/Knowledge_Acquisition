@@ -1,0 +1,48 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info/
+.pytest_cache/
+
+# Directorios temporales y cache
+cache/
+temp_audio/
+backup/
+.ipynb_checkpoints
+.coverage
+htmlcov/
+
+# Archivos de audio y video
+*.wav
+*.raw
+*.mp3
+*.mp4
+
+# Entorno y configuración
+.env
+.venv
+venv/
+.conda/
+
+# Logs y outputs
+logs/
+*.log
+outputs/
+
+# IDEs
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Base de datos
+*.sqlite
+*.db
+
+# Archivos generados
+dist/
+build/
+_build/

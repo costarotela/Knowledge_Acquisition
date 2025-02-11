@@ -1,0 +1,6 @@
+OBJETIVO> Revisar estructura general del proyecto buscando posibles inconsitencias en el obetivo Extraer conocmientos de videos de youtube sobre TEMAS escogidos por el Administrador/Usuario, Categorizando mediante funcionalidades del Agentepara que se trtansfoirme radicalmente en un experto segun la categoria/tema.
+los conocmientos deben ir incrementando mediante tecnicas con uso de herramientas de inteligencia artifical Agentic RAG.
+a medida que se vayan agregando mas videos a su base de conocimientos el esquema que use este agente debe ser capaz y preciso en sus respuestas.
+Ademas debe tener la posibilidad de razonar sobre sus propios datos relevados y sacar sus conclusiones mostrando los resultados para que el adinistrador evalue y consolide 
+Poder realizar busqueda web mediante tecnicas de raspado profesional
+<OBJETIVO

@@ -1,0 +1,60 @@
+name: knowledge-acquisition
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - python=3.9
+  - pip
+  # Dependencias principales
+  - numpy>=1.21.0
+  - scipy>=1.9.0
+  - python-dotenv>=1.0.0
+  - pydantic>=2.0.0
+  
+  # Testing y desarrollo
+  - pytest>=7.4.0
+  - pytest-cov>=4.1.0
+  - pytest-asyncio>=0.21.0
+  - black>=23.7.0
+  - mypy>=1.5.1
+  
+  # Procesamiento de audio
+  - python-sounddevice>=0.4.6
+  - librosa>=0.10.0
+  
+  # Machine Learning
+  - faiss-cpu>=1.7.4
+  - scikit-learn>=1.0.0
+  - opencv>=4.6.0
+  - pytorch>=1.12.0
+  - torchvision>=0.13.0
+  
+  - pip:
+    # Framework y UI
+    - streamlit>=1.32.0
+    - streamlit-webrtc>=0.47.1
+    - st-supabase-connection>=2.0.1
+    
+    # Procesamiento de Audio y Voz
+    - openai-whisper>=20231117
+    - youtube-transcript-api>=0.6.0
+    - google-api-python-client>=2.0.0
+    
+    # Modelos y RAG
+    - langchain>=0.1.0
+    - langchain-core>=0.1.0
+    - langchain-community>=0.0.10
+    - langchain-openai>=0.0.1
+    - chromadb>=0.6.3
+    - transformers>=4.36.0
+    - sentence-transformers>=2.2.0
+    - keybert>=0.7.0
+    
+    # Procesamiento de Video
+    - pillow>=9.0.0
+    - moviepy>=1.0.3
+    
+    # Utilidades
+    - rich>=13.0.0
+    - pylint>=2.17.5
+    - pytube
