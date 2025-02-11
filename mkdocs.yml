@@ -1,7 +1,8 @@
 site_name: Knowledge Acquisition Agent
 site_description: Documentation for the Knowledge Acquisition Agent project
 site_author: Pablo
-repo_url: https://github.com/pablo/knowledge-acquisition
+repo_url: https://github.com/costarotela/Knowledge_Acquisition
+site_url: https://costarotela.github.io/Knowledge_Acquisition/
 
 theme:
   name: material
@@ -92,7 +93,7 @@ plugins:
 extra:
   social:
     - icon: fontawesome/brands/github
-      link: https://github.com/pablo/knowledge-acquisition
+      link: https://github.com/costarotela/Knowledge_Acquisition
     - icon: fontawesome/brands/python
       link: https://pypi.org/project/knowledge-acquisition/
   
