@@ -1,6 +1,6 @@
 # Arquitectura del Sistema
 
-## 📐 Diseño General
+## Diseño General
 
 ```mermaid
 graph TB
@@ -14,59 +14,30 @@ graph TB
     H --> D
 ```
 
-## 🧩 Componentes Principales
+## Componentes Implementados
 
-### 1. Módulo de Scraping
-#### Responsabilidades
-- Extracción de datos de múltiples fuentes
-- Chunking inteligente
-- Rate limiting
-- Manejo de errores
+### 1. Módulo de Scraping 
+- `BaseScraper`: Interfaz abstracta base
+- `AdvancedCrawler`: Implementado
+- `YouTubeScraper`: Implementado
+- `RateLimiter`: Implementado
 
-#### Implementaciones
-- `BaseScraper`: Interfaz abstracta
-- `AdvancedCrawler`: Crawler web profesional
-- `YouTubeScraper`: Especializado en YouTube
-- `WebScraper`: Scraping web general
-
-### 2. Vector Store
-#### Características
-- Almacenamiento eficiente de embeddings
-- Búsqueda por similitud
-- Persistencia de índices
-- Metadatos enriquecidos
-
-#### Componentes
+### 2. Vector Store 
 - FAISS para indexación
 - OpenAI para embeddings
-- Sistema de caché local
+- Sistema de persistencia
 
-### 3. Sistema RAG
-#### Funcionalidades
-- Generación de respuestas
-- Contextualización
-- Citación de fuentes
-- Control de calidad
+### 3. Sistema RAG 
+- `KnowledgeAgent`: Base implementada
+- `KnowledgeConsolidator`: En desarrollo
+- Integración con OpenAI
 
-#### Subsistemas
-- Prompt engineering
-- Gestión de contexto
-- Evaluación de respuestas
+### 4. Knowledge Graph 
+- Estructura base definida
+- Relaciones semánticas pendientes
+- Sistema de confianza pendiente
 
-### 4. Knowledge Graph
-#### Estructura
-- Nodos de conocimiento
-- Relaciones semánticas
-- Metadatos y confianza
-- Historial de validación
-
-#### Operaciones
-- Inserción de nodos
-- Actualización de relaciones
-- Consultas complejas
-- Mantenimiento
-
-## 🔄 Flujos de Datos
+## Flujos de Datos
 
 ### 1. Adquisición de Conocimiento
 ```mermaid
@@ -97,104 +68,63 @@ sequenceDiagram
     R->>U: Response
 ```
 
-### 3. Consolidación
-```mermaid
-sequenceDiagram
-    participant K as KnowledgeGraph
-    participant C as Consolidator
-    participant V as Validator
-    participant S as Storage
-    
-    K->>C: Knowledge Nodes
-    C->>V: Consolidated Info
-    V->>S: Validated Data
-    S->>K: Update Graph
-```
+## Detalles Técnicos
 
-## 🛠️ Detalles Técnicos
-
-### Almacenamiento
+### Implementado 
 - FAISS para vectores
-- SQLite para metadatos
-- Sistema de archivos para caché
-
-### APIs
 - OpenAI para LLM
-- YouTube Data API
-- Web APIs varias
+- GitHub Actions para CI/CD
+- MkDocs para documentación
 
-### Concurrencia
-- asyncio para I/O
+### En Desarrollo 
+- Tests unitarios
+- Sistema de caché
+- Validación automática
+- Métricas de calidad
+
+### Pendiente 
+- Sharding de datos
+- Procesamiento distribuido
+- Sistema de plugins
+- API REST
+
+## Escalabilidad
+
+### Implementado 
+- Chunking inteligente
+- Rate limiting
+- Persistencia de índices
+
+### Planificado 
+- Caché distribuida
+- Load balancing
 - Procesamiento paralelo
-- Rate limiting distribuido
 
-### Seguridad
-- Validación de entrada
-- Rate limiting
-- Manejo seguro de API keys
+## Seguridad
 
-## 📈 Escalabilidad
+### Implementado 
+- Variables de entorno
+- Token de GitHub
+- Secretos en CI/CD
 
-### Vertical
-- Optimización de memoria
-- Procesamiento batch
-- Caché inteligente
-
-### Horizontal
-- Sharding de índices
-- Replicación de conocimiento
-- Distribución de carga
-
-## 🔍 Monitoreo
-
-### Métricas
-- Latencia de respuesta
-- Uso de recursos
-- Calidad de respuestas
-- Tasa de éxito
-
-### Logging
-- Errores y excepciones
-- Decisiones del sistema
-- Uso de API
-- Performance
-
-## 🔒 Seguridad
-
-### Datos
+### Pendiente 
+- Autenticación de API
 - Encriptación en reposo
-- Sanitización de entrada
-- Backups regulares
+- Auditoría de accesos
 
-### API
-- Autenticación
-- Rate limiting
-- Validación de tokens
+## Monitoreo
 
-## 🔄 Ciclo de Vida
+### En Desarrollo 
+- Logs de sistema
+- Métricas de rendimiento
+- Estado de componentes
 
-### Desarrollo
-1. Implementación modular
-2. Testing exhaustivo
-3. Documentación clara
-4. Code review
+### Planificado 
+- Dashboard de métricas
+- Alertas automáticas
+- Análisis de tendencias
 
-### Despliegue
-1. CI/CD pipeline
-2. Versionado semántico
-3. Rollback plan
-4. Monitoreo post-deploy
-
-## 📝 Notas de Implementación
-
-### Mejores Prácticas
-- Clean Architecture
-- SOLID principles
-- Dependency Injection
-- Error handling robusto
-
-### Consideraciones
-- Mantener bajo acoplamiento
-- Facilitar testing
-- Documentar decisiones
-- Priorizar mantenibilidad
+## Última Actualización
+- Fecha: 11 de Febrero, 2025
+- Estado: Implementación inicial
+- Progreso: ~35% completado
