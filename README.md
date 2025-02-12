@@ -1,141 +1,158 @@
-# Knowledge Acquisition Agent 
+# Knowledge Acquisition Agent 🤖
 
-Un agente inteligente especializado en adquisición y síntesis de conocimiento, utilizando GPT-4 y técnicas avanzadas de procesamiento de lenguaje natural.
+Sistema avanzado de adquisición y procesamiento de conocimiento usando múltiples modelos de lenguaje.
 
-## Características
+## 🗺️ Mapa del Proyecto
 
-- Procesamiento de múltiples fuentes de conocimiento
-- Análisis semántico profundo
-- Generación de resúmenes y síntesis
-- Almacenamiento vectorial eficiente
-- API REST para integración
-- Interfaz web interactiva
-- 🔍 **Búsqueda Inteligente**: Búsqueda y extracción de información relevante de múltiples fuentes
-- ✅ **Validación de Información**: Verificación automática de la calidad y confiabilidad de la información
-- 🧠 **Síntesis de Conocimiento**: Generación de resúmenes coherentes y estructurados
-- 📊 **Evaluación Automática**: Evaluación de la calidad y completitud del conocimiento adquirido
-
-## Arquitectura
-
-El sistema está compuesto por varios agentes especializados:
-
-1. **KnowledgeScout**: Busca y extrae información relevante
-2. **FactValidator**: Valida la calidad y confiabilidad de la información
-3. **KnowledgeSynthesizer**: Sintetiza y estructura el conocimiento
-4. **MetaEvaluator**: Evalúa la calidad del conocimiento adquirido
-
-## Requisitos
-
-- Python 3.11+
-- Conda (recomendado)
-- OpenAI API Key
-- Supabase (opcional, para almacenamiento)
-
-## Instalación
-
-### Configuración del Entorno
-
-1. Clonar el repositorio:
-```bash
-git clone https://github.com/costarotela/Knowledge_Acquisition.git
-cd Knowledge_Acquisition
+```
+src/
+├── llm/                    # Gestión de Modelos de Lenguaje
+│   ├── model_provider.py   # Proveedores de LLM (OpenAI, Groq, etc.)
+│   ├── llm_router.py       # Enrutamiento inteligente de modelos
+│   └── utils.py           # Utilidades para LLM
+├── config.py              # Configuración centralizada
+└── ...                    # Otros módulos
 ```
 
-2. Crear y activar el entorno conda:
+## 🎯 Funcionalidades Principales
+
+### 1. Sistema Multi-Modelo (LLM)
+- **Proveedores Soportados**:
+  - OpenAI (GPT-4, GPT-3.5)
+  - Groq (Mixtral, LLaMA 2, Gemma)
+  - DeepInfra
+  - HuggingFace
+  - Soporte futuro para modelos locales
+
+- **Enrutamiento Inteligente**:
+  - Selección automática del mejor modelo según la tarea
+  - Optimización de costos y rendimiento
+  - Sistema de fallback automático
+
+- **Tipos de Tareas**:
+  - `CODE`: Generación y análisis de código
+  - `CHAT`: Conversación general
+  - `CLASSIFICATION`: Clasificación de texto
+  - `SUMMARY`: Generación de resúmenes
+  - `EXTRACTION`: Extracción de información
+  - `EMBEDDING`: Generación de embeddings
+
+### 2. Configuración Flexible
+- **Variables de Entorno** (.env):
+  ```bash
+  # LLM Configuration
+  LLM_TYPE=openai|groq|deepinfra|huggingface|local
+  LLM_NAME=gpt-4-turbo|mixtral-groq|...
+  LLM_TEMPERATURE=0.7
+  LLM_STREAMING=False
+
+  # API Keys
+  OPENAI_API_KEY=sk-...
+  GROQ_API_KEY=gsk-...
+  ```
+
+- **Configuración de Rutas**:
+  ```python
+  # En config.py
+  LLM_CONFIG = {
+      "routes": {
+          "CODE": "gpt4",          # Precisión
+          "CHAT": "mixtral",       # Velocidad/Costo
+          "CLASSIFICATION": "gpt35" # Suficiente
+      }
+  }
+  ```
+
+## 🚀 Guía de Uso
+
+### 1. Configuración Básica
 ```bash
-conda env create -f environment.yml
+# 1. Clonar el repositorio
+git clone https://github.com/tu-usuario/Knowledge_Acquisition.git
+
+# 2. Crear entorno conda
+conda create -n knowledge-acquisition python=3.11
 conda activate knowledge-acquisition
-```
 
-3. Configurar variables de entorno:
-```bash
+# 3. Instalar dependencias
+pip install -r requirements.txt
+
+# 4. Configurar variables de entorno
 cp .env.example .env
-# Editar .env con tus credenciales
+# Editar .env con tus API keys
 ```
 
-## Uso
-
-### Ejemplo Básico
+### 2. Uso del Sistema Multi-Modelo
 
 ```python
-from src.agent.orchestrator import KnowledgeOrchestrator, AcquisitionTask, TaskType, TaskPriority
+from src.llm.utils import get_llm_for_task
+from src.llm.llm_router import TaskType
 
-# Inicializar orquestador
-config = {
-    "openai_api_key": "tu_api_key",
-    "model_name": "gpt-4-turbo-preview"
-}
-orchestrator = KnowledgeOrchestrator(config)
+# Obtener el mejor modelo para cada tarea
+code_llm = get_llm_for_task(TaskType.CODE)      # Usa GPT-4
+chat_llm = get_llm_for_task(TaskType.CHAT)      # Usa Mixtral
+summary_llm = get_llm_for_task(TaskType.SUMMARY) # Usa el modelo configurado
+```
 
-# Crear tarea de investigación
-task = AcquisitionTask(
-    query="https://ejemplo.com/articulo",
-    task_type=TaskType.RESEARCH,
-    priority=TaskPriority.HIGH
+### 3. Configuración Avanzada
+
+```python
+from src.llm.llm_router import LLMRouter, TaskType
+from src.llm.model_provider import ModelType
+
+# Crear router personalizado
+router = LLMRouter()
+
+# Agregar proveedores
+router.add_provider(
+    name="gpt4",
+    model_type=ModelType.OPENAI,
+    model_name="gpt-4-turbo"
 )
 
-# Ejecutar tarea
-result = await orchestrator.execute(task)
+router.add_provider(
+    name="mixtral",
+    model_type=ModelType.GROQ,
+    model_name="mixtral-groq"
+)
 
-# Procesar resultados
-if result.success:
-    print("Conocimiento extraído:")
-    print(f"- Conceptos: {result.data.get('concepts')}")
-    print(f"- Resumen: {result.data.get('summary')}")
+# Configurar rutas
+router.set_route(TaskType.CODE, "gpt4")
+router.set_route(TaskType.CHAT, "mixtral")
+router.set_fallback("mixtral")
 ```
 
-### Ejemplos Avanzados
+## 📋 TODO y Próximos Pasos
 
-Ver la carpeta `examples/` para más ejemplos de uso.
+1. **Modelos Locales**
+   - [ ] Integración con llama.cpp
+   - [ ] Soporte para modelos cuantitativos
+   - [ ] Gestión de recursos locales
 
-## Estructura del Proyecto
+2. **Optimización**
+   - [ ] Sistema de caché para respuestas
+   - [ ] Balanceo de carga entre modelos
+   - [ ] Monitoreo de costos y uso
 
-```
-Knowledge_Acquisition/
-├── src/
-│   ├── agent/
-│   │   ├── specialized/
-│   │   │   ├── knowledge_scout.py
-│   │   │   ├── fact_validator.py
-│   │   │   ├── knowledge_synthesizer.py
-│   │   │   └── meta_evaluator.py
-│   │   └── orchestrator.py
-│   ├── auth/
-│   └── scrapers/
-├── examples/
-├── tests/
-└── docs/
-```
+3. **Nuevas Funcionalidades**
+   - [ ] Más proveedores de LLM
+   - [ ] Nuevos tipos de tareas
+   - [ ] Evaluación automática de respuestas
 
-## Desarrollo
+## 📚 Documentación Adicional
 
-### Entornos de Desarrollo
+- [Guía de Desarrollo](docs/development.md)
+- [Configuración de Modelos](docs/models.md)
+- [API Reference](docs/api.md)
 
-1. **knowledge-acquisition** (Principal):
-   - Para desarrollo principal y producción
-   - Contiene todas las dependencias
-   - Incluye CUDA/PyTorch y procesamiento multimedia
-
-2. **knowledge-acq-test** (Testing):
-   - SOLO para pruebas y correcciones rápidas
-   - Dependencias mínimas
-   - Sin CUDA/PyTorch
-
-### Convenciones de Código
-
-- Seguir PEP 8
-- Documentar todas las funciones y clases
-- Usar type hints
-- Mantener cobertura de tests > 80%
-
-## Contribuir
+## 🤝 Contribución
 
 1. Fork el repositorio
-2. Crear una rama (`git checkout -b feature/nombre`)
-3. Commit los cambios (`git commit -am 'Add: característica'`)
-4. Push a la rama (`git push origin feature/nombre`)
-5. Crear un Pull Request
+2. Crea una rama para tu feature (`git checkout -b feature/AmazingFeature`)
+3. Commit tus cambios (`git commit -m 'Add some AmazingFeature'`)
+4. Push a la rama (`git push origin feature/AmazingFeature`)
+5. Abre un Pull Request
 
-## Licencia
+## 📄 Licencia
 
-Este proyecto está bajo la licencia MIT. Ver el archivo `LICENSE` para más detalles.
+Este proyecto está bajo la licencia MIT. Ver el archivo [LICENSE](LICENSE) para más detalles.
