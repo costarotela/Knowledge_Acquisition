@@ -4,45 +4,63 @@ __pycache__/
 *$py.class
 *.so
 .Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
 *.egg-info/
-.pytest_cache/
+.installed.cfg
+*.egg
 
-# Directorios temporales y cache
-cache/
-temp_audio/
-backup/
-.ipynb_checkpoints
-.coverage
-htmlcov/
-
-# Archivos de audio y video
-*.wav
-*.raw
-*.mp3
-*.mp4
-
-# Entorno y configuración
+# Virtual Environment
 .env
 .venv
+env/
 venv/
-.conda/
+ENV/
 
-# Logs y outputs
-logs/
-*.log
-outputs/
-
-# IDEs
+# IDE
 .idea/
 .vscode/
 *.swp
 *.swo
+.project
+.pydevproject
 
-# Base de datos
-*.sqlite
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+nosetests.xml
+coverage.xml
+
+# Documentation
+/site
+docs/_build/
+
+# Project specific
+/cache/
+/data/
+/logs/
+/outputs/
+/frames/
+*.log
 *.db
+*.sqlite3
 
-# Archivos generados
-dist/
-build/
-_build/
+# Jupyter Notebook
+.ipynb_checkpoints
+*.ipynb
+
+# System
+.DS_Store
+Thumbs.db

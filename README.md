@@ -1,151 +1,133 @@
-# Sistema de Adquisición de Conocimiento Nutricional
+# Knowledge Acquisition Agent
 
-Sistema avanzado de procesamiento y consulta de conocimiento nutricional que utiliza técnicas de RAG (Retrieval-Augmented Generation) para proporcionar respuestas precisas sobre nutrición deportiva.
+Un agente inteligente especializado en adquisición y síntesis de conocimiento, utilizando GPT-4 y técnicas avanzadas de procesamiento de lenguaje natural.
 
-## Características Principales
+## Características
 
-- **Sistema RAG Avanzado**: Implementación sofisticada de Retrieval-Augmented Generation
-- **Procesamiento de Videos**: Extracción y análisis de conocimiento de videos de YouTube
-- **Búsqueda Inteligente**: Sistema de búsqueda en dos fases con puntuación multifactorial
-- **Interfaz Web Moderna**: Implementada con Streamlit para una experiencia fluida
-- **Base Vectorial**: Almacenamiento y búsqueda vectorial eficiente con Supabase
-- **Multilingüe**: Soporte nativo para español e inglés
+- 🔍 **Búsqueda Inteligente**: Búsqueda y extracción de información relevante de múltiples fuentes
+- ✅ **Validación de Información**: Verificación automática de la calidad y confiabilidad de la información
+- 🧠 **Síntesis de Conocimiento**: Generación de resúmenes coherentes y estructurados
+- 📊 **Evaluación Automática**: Evaluación de la calidad y completitud del conocimiento adquirido
 
-## Tecnologías
+## Arquitectura
 
-- **Frontend**: Streamlit
-- **Backend**: Python, FastAPI
-- **Base de Datos**: Supabase (PostgreSQL + Extensiones Vectoriales)
-- **ML/AI**: LangChain, OpenAI GPT-3.5
-- **Procesamiento**: YouTube API, Sentence Transformers
+El sistema está compuesto por varios agentes especializados:
 
-## Requisitos
-
-- Python 3.8+
-- Supabase Account
-- OpenAI API Key
-- YouTube API Key
+1. **KnowledgeScout**: Busca y extrae información relevante
+2. **FactValidator**: Valida la calidad y confiabilidad de la información
+3. **KnowledgeSynthesizer**: Sintetiza y estructura el conocimiento
+4. **MetaEvaluator**: Evalúa la calidad del conocimiento adquirido
 
 ## Instalación
 
+### Requisitos
+
+- Python 3.11+
+- Conda (recomendado)
+
+### Configuración del Entorno
+
 1. Clonar el repositorio:
 ```bash
-git clone <repositorio>
+git clone https://github.com/costarotela/Knowledge_Acquisition.git
 cd Knowledge_Acquisition
 ```
 
-2. Crear y activar entorno Conda:
+2. Crear y activar el entorno conda:
 ```bash
-conda create -n knowledge_acquisition python=3.8
-conda activate knowledge_acquisition
+conda env create -f environment.yml
+conda activate knowledge-acquisition
 ```
 
-3. Instalar dependencias:
-```bash
-conda install --file requirements.txt
-# Para paquetes que no estén en conda:
-pip install -r requirements-pip.txt
-```
-
-4. Configurar variables de entorno:
+3. Configurar variables de entorno:
 ```bash
 cp .env.example .env
-# Editar .env con tus claves API
+# Editar .env con tus credenciales
 ```
-
-## Configuración
-
-1. Variables de Entorno Requeridas:
-```
-OPENAI_API_KEY=sk-...
-SUPABASE_URL=https://...
-SUPABASE_ANON_KEY=eyJ...
-SUPABASE_SERVICE_KEY=eyJ...
-YOUTUBE_API_KEY=AIza...
-```
-
-2. Configuración de Supabase:
-- Crear proyecto en Supabase
-- Habilitar extensiones vectoriales
-- Ejecutar migraciones SQL (ver /docs/migrations/)
 
 ## Uso
 
-1. Iniciar la aplicación:
-```bash
-streamlit run app.py
+### Ejemplo Básico
+
+```python
+from src.agent.orchestrator import KnowledgeOrchestrator, AcquisitionTask, TaskType, TaskPriority
+
+# Inicializar orquestador
+config = {
+    "openai_api_key": "tu_api_key",
+    "model_name": "gpt-4-turbo-preview"
+}
+orchestrator = KnowledgeOrchestrator(config)
+
+# Crear tarea de investigación
+task = AcquisitionTask(
+    query="https://ejemplo.com/articulo",
+    task_type=TaskType.RESEARCH,
+    priority=TaskPriority.HIGH
+)
+
+# Ejecutar tarea
+result = await orchestrator.execute(task)
+
+# Procesar resultados
+if result.success:
+    print("Conocimiento extraído:")
+    print(f"- Conceptos: {result.data.get('concepts')}")
+    print(f"- Resumen: {result.data.get('summary')}")
 ```
 
-2. Acceder a la interfaz web:
-- Abrir navegador en `http://localhost:8501`
-- Ingresar con credenciales (si está configurado)
+### Ejemplos Avanzados
 
-## Funcionalidades
-
-### Procesamiento de Videos
-1. Ingresar URL de YouTube
-2. El sistema procesará automáticamente:
-   - Extracción de transcripción
-   - Análisis de contenido
-   - Generación de embeddings
-   - Almacenamiento estructurado
-
-### Consultas
-1. Realizar pregunta en lenguaje natural
-2. El sistema:
-   - Analiza la consulta
-   - Busca contexto relevante
-   - Genera respuesta precisa
-   - Proporciona fuentes
+Ver la carpeta `examples/` para más ejemplos de uso.
 
 ## Estructura del Proyecto
 
 ```
 Knowledge_Acquisition/
 ├── src/
-│   ├── agent/           # Núcleo del sistema
-│   ├── auth/            # Autenticación
-│   └── youtube/         # Procesamiento de videos
-├── app.py              # Aplicación principal
-├── requirements.txt    # Dependencias
-└── docs/              # Documentación
-    ├── DESIGN.md      # Diseño detallado
-    ├── API.md         # Documentación API
-    └── migrations/    # Scripts SQL
+│   ├── agent/
+│   │   ├── specialized/
+│   │   │   ├── knowledge_scout.py
+│   │   │   ├── fact_validator.py
+│   │   │   ├── knowledge_synthesizer.py
+│   │   │   └── meta_evaluator.py
+│   │   └── orchestrator.py
+│   ├── auth/
+│   └── scrapers/
+├── examples/
+├── tests/
+└── docs/
 ```
-
-## Documentación
-
-- [Diseño del Sistema](docs/DESIGN.md)
-- [API Reference](docs/API.md)
-- [Guía de Contribución](docs/CONTRIBUTING.md)
 
 ## Desarrollo
 
-### Tests
-```bash
-pytest tests/
-```
+### Entornos de Desarrollo
 
-### Linting
-```bash
-flake8 src/
-black src/
-```
+1. **knowledge-acquisition** (Principal):
+   - Para desarrollo principal y producción
+   - Contiene todas las dependencias
+   - Incluye CUDA/PyTorch y procesamiento multimedia
 
-### Migraciones
-```bash
-python scripts/migrate.py
-```
+2. **knowledge-acq-test** (Testing):
+   - SOLO para pruebas y correcciones rápidas
+   - Dependencias mínimas
+   - Sin CUDA/PyTorch
+
+### Convenciones de Código
+
+- Seguir PEP 8
+- Documentar todas las funciones y clases
+- Usar type hints
+- Mantener cobertura de tests > 80%
 
 ## Contribuir
 
 1. Fork el repositorio
-2. Crear rama feature (`git checkout -b feature/AmazingFeature`)
-3. Commit cambios (`git commit -m 'Add AmazingFeature'`)
-4. Push a la rama (`git push origin feature/AmazingFeature`)
-5. Abrir Pull Request
+2. Crear una rama (`git checkout -b feature/nombre`)
+3. Commit los cambios (`git commit -am 'Add: característica'`)
+4. Push a la rama (`git push origin feature/nombre`)
+5. Crear un Pull Request
 
 ## Licencia
 
-Este proyecto está bajo la Licencia MIT. Ver [LICENSE](LICENSE) para más detalles.
+Este proyecto está bajo la licencia MIT. Ver el archivo `LICENSE` para más detalles.

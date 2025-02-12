@@ -1,9 +1,12 @@
+"""
+Aplicación Streamlit para el sistema de adquisición de conocimiento.
+"""
 import streamlit as st
 import logging
-from src.auth.supabase_auth import SupabaseAuth
-from src.supabase_knowledge_base import SupabaseKnowledgeBase
-from src.youtube_processor import YouTubeProcessor
-from src.agent.models.rag_model import AgenticNutritionRAG
+from src.auth.security import requires_auth, create_access_token
+from src.auth.models import User, Role, Permission
+from src.agent.models.rag_model import KnowledgeAcquisitionRAG
+from src.config import validate_config
 import os
 from dotenv import load_dotenv
 
@@ -13,10 +16,11 @@ logger = logging.getLogger(__name__)
 
 # Cargar variables de entorno
 load_dotenv()
+validate_config()
 
 # Configuración de la página
 st.set_page_config(
-    page_title="Knowledge Acquisition",
+    page_title="Knowledge Acquisition System",
     page_icon="🧠",
     layout="wide"
 )
@@ -27,222 +31,92 @@ if 'initialized' not in st.session_state:
 
 if not st.session_state.initialized:
     logger.info("Inicializando estado de la aplicación...")
-    # Inicializar Supabase Auth
-    if 'auth' not in st.session_state:
-        logger.info("Inicializando autenticación de Supabase")
-        st.session_state.auth = SupabaseAuth()
-    
-    # Inicializar YouTube Processor
-    if 'youtube_processor' not in st.session_state:
-        youtube_api_key = os.getenv('YOUTUBE_API_KEY')
-        if not youtube_api_key:
-            raise ValueError("YOUTUBE_API_KEY debe estar definida en .env")
-        st.session_state.youtube_processor = YouTubeProcessor(youtube_api_key)
-    
-    # Inicializar Knowledge Base
-    if 'knowledge_base' not in st.session_state:
-        st.session_state.knowledge_base = SupabaseKnowledgeBase()
     
     # Inicializar RAG Agent
     if 'rag_agent' not in st.session_state:
         try:
             logger.info("Inicializando RAG Agent...")
-            st.session_state.rag_agent = AgenticNutritionRAG()
+            st.session_state.rag_agent = KnowledgeAcquisitionRAG()
             st.session_state.rag_agent.initialize()
-            logger.info("RAG Agent inicializado correctamente")
         except Exception as e:
-            logger.error(f"Error inicializando RAG Agent: {str(e)}", exc_info=True)
-            st.error(f"Error inicializando el agente: {str(e)}")
+            st.error(f"Error inicializando RAG Agent: {e}")
             st.stop()
     
     st.session_state.initialized = True
-    logger.info("Inicialización completada")
 
-# Verificar si hay una sesión activa
-if 'user' not in st.session_state:
-    # Obtener usuario actual
-    current_user = st.session_state.auth.get_current_user()
-    if current_user:
-        st.session_state.user = current_user
-        st.session_state.is_admin = True
-        logger.info(f"Sesión restaurada para: {current_user['email']}")
+# Título principal
+st.title("Sistema de Adquisición de Conocimiento")
 
-# Interfaz de usuario
-st.title("🧠 Knowledge Acquisition")
-
-# Tabs principales
-tab1, tab2 = st.tabs(["🔍 Base de Conocimiento", "⚙️ Administración"])
+# Crear pestañas
+tab1, tab2 = st.tabs(["Base de Conocimiento", "Administración"])
 
 with tab1:
     st.header("Base de Conocimiento")
     
-    # Chat con el agente
-    col1, col2 = st.columns([4, 1])
+    # Entrada de fuente de información
+    source = st.text_input("Ingrese la URL o ruta del archivo:")
+    source_type = st.selectbox(
+        "Tipo de fuente",
+        ["auto", "video", "document", "web"],
+        index=0
+    )
     
-    with col1:
-        query = st.text_area("💭 Consulta al Agente", height=100, 
-                            placeholder="Escribe tu pregunta aquí...")
-    with col2:
-        submit = st.button("🔍 Buscar", type="primary")
-    
-    if submit and query:
-        with st.spinner("Analizando tu pregunta..."):
+    if st.button("Procesar"):
+        if source:
             try:
-                import asyncio
-                
-                # Obtener contexto relevante
-                results = st.session_state.knowledge_base.search_knowledge(query, top_k=5)
-                
-                # Generar respuesta usando el agente RAG
-                loop = asyncio.new_event_loop()
-                asyncio.set_event_loop(loop)
-                response = loop.run_until_complete(st.session_state.rag_agent.get_response(query, results))
-                loop.close()
-                
-                if results and response:
-                    st.success("¡He encontrado información relevante!")
+                with st.spinner("Procesando fuente de información..."):
+                    result = st.session_state.rag_agent.process_source(
+                        source,
+                        source_type if source_type != "auto" else None
+                    )
                     
-                    # Mostrar la respuesta del agente
-                    st.write("### 🤖 Respuesta del Agente")
-                    st.write(response)
-                    
-                    # Mostrar fuentes de información
-                    st.write("### 📚 Fuentes de Información")
-                    for result in results:
-                        with st.expander(f"📺 {result['title']} (Score: {result['score']:.2f})"):
-                            st.write(f"**Canal:** {result['channel']}")
-                            st.write(f"**Ver Video:** [{result['url']}]({result['url']})")
-                            st.write("**Contexto Relevante:**")
-                            st.write(result['context'])
-                else:
-                    st.warning("No encontré información específica sobre eso en mi base de conocimiento.")
-                        
+                    # Mostrar resultados
+                    st.success("Procesamiento completado")
+                    st.json(result)
             except Exception as e:
-                st.error(f"Error al procesar tu pregunta: {str(e)}")
-                logger.error(f"Error procesando pregunta: {str(e)}", exc_info=True)
-    
-    # Videos Disponibles
-    st.subheader("📚 Videos Disponibles")
-    try:
-        videos = st.session_state.knowledge_base.get_videos()
-        
-        if videos:
-            for video in videos:
-                with st.expander(f"📺 {video['title']}"):
-                    st.write(f"**Canal:** {video['channel']}")
-                    st.write(f"**Ver Video:** [{video['url']}]({video['url']})")
+                st.error(f"Error procesando fuente: {e}")
         else:
-            st.info("No hay videos procesados aún")
-    except Exception as e:
-        st.error(f"Error al cargar videos: {str(e)}")
+            st.warning("Por favor ingrese una fuente de información")
 
 with tab2:
     # Si no hay usuario, mostrar login
     if 'user' not in st.session_state:
         with st.form("login_form"):
-            st.info("Para administrar la base de conocimiento, es necesario iniciar sesión como administrador")
-            st.subheader("🔐 Iniciar Sesión como Administrador")
-            col1, col2, col3 = st.columns([1,2,1])
-            with col2:
-                email = st.text_input("Email")
-                password = st.text_input("Contraseña", type="password")
-                if st.form_submit_button("Iniciar Sesión"):
-                    try:
-                        user = st.session_state.auth.login(email, password)
-                        if user:
-                            st.session_state.is_admin = True
-                            st.session_state.user = user
-                            st.success("¡Inicio de sesión exitoso!")
-                            st.rerun()
-                    except Exception as e:
-                        st.error(f"Error al iniciar sesión: {str(e)}")
-        st.stop()
+            st.info("Para administrar el sistema, es necesario iniciar sesión como administrador")
+            username = st.text_input("Usuario")
+            password = st.text_input("Contraseña", type="password")
+            
+            if st.form_submit_button("Iniciar Sesión"):
+                # TODO: Implementar autenticación real
+                if username == os.getenv("ADMIN_USERNAME") and password == os.getenv("ADMIN_PASSWORD"):
+                    st.session_state.user = User(
+                        username=username,
+                        role=Role.OWNER,
+                        permissions=[p for p in Permission]
+                    )
+                    st.success("Sesión iniciada correctamente")
+                    st.rerun()
+                else:
+                    st.error("Credenciales inválidas")
     
-    # Mostrar información del usuario y botón de logout en la sidebar
-    st.sidebar.write(f"👤 Usuario: {st.session_state.user['email']}")
-    if st.sidebar.button("Cerrar Sesión"):
-        st.session_state.auth.logout()
-        st.rerun()
-    
-    # Sección de Administración
-    st.header("Administración de la Base de Conocimiento")
-    
-    # Procesar Video
-    st.subheader("📺 Procesar Nuevo Video")
-    youtube_url = st.text_input("URL del video de YouTube")
-    col1, col2 = st.columns([3, 1])
-    
-    with col1:
-        if youtube_url:
-            try:
-                # Procesar video
-                video_info = st.session_state.youtube_processor.get_video_info(youtube_url)
-                
-                if video_info:
-                    st.write("### Información del Video")
-                    st.write(f"**Título:** {video_info['title']}")
-                    st.write(f"**Canal:** {video_info['channel']}")
-                    st.write(f"**Duración:** {video_info['duration']}")
-                
-            except Exception as e:
-                st.error(f"Error al procesar el video: {str(e)}")
-                logger.error(f"Error procesando video: {str(e)}")
-    
-    with col2:
-        if youtube_url and 'video_info' in locals():
-            if st.button("🎯 Procesar", type="primary"):
-                with st.spinner("Procesando video..."):
-                    try:
-                        # Obtener transcripción
-                        transcript = st.session_state.youtube_processor.get_transcript(youtube_url)
-                        
-                        if transcript:
-                            # Guardar en la base de conocimiento
-                            st.session_state.knowledge_base.store_video_knowledge(
-                                video_info['title'],
-                                video_info['channel'],
-                                youtube_url,
-                                transcript
-                            )
-                            st.success("¡Video procesado y guardado exitosamente!")
-                        else:
-                            st.error("No se pudo obtener la transcripción del video")
-                    except Exception as e:
-                        st.error(f"Error al procesar el video: {str(e)}")
-    
-    # Estadísticas
-    st.subheader("📊 Estadísticas de Conocimiento")
-    try:
-        stats = st.session_state.knowledge_base.get_statistics()
-        col1, col2, col3 = st.columns(3)
+    # Si hay usuario, mostrar panel de administración
+    else:
+        st.header(f"Bienvenido, {st.session_state.user.username}")
+        
+        # Mostrar estadísticas y configuración
+        col1, col2 = st.columns(2)
         
         with col1:
-            st.metric("Total Videos", stats["total_videos"])
-        with col2:
-            st.metric("Total Conceptos", stats["total_concepts"])
-        with col3:
-            st.metric("Última Actualización", stats["last_update"])
+            st.subheader("Estadísticas")
+            # TODO: Implementar estadísticas
             
-    except Exception as e:
-        st.error(f"Error obteniendo estadísticas: {str(e)}")
-    
-    # Explorador de Conocimientos
-    st.subheader("🔍 Explorar Base de Conocimientos")
-    concept = st.text_input("Buscar concepto o tema")
-    if concept:
-        try:
-            results = st.session_state.knowledge_base.search_knowledge(concept)
-            if results:
-                for result in results:
-                    with st.expander(f"📺 {result['title']} (Score: {result['score']:.2f})"):
-                        st.write(f"**Canal:** {result['channel']}")
-                        st.write(f"**URL:** {result['url']}")
-                        st.write("**Contexto Relevante:**")
-                        st.write(result['context'])
-            else:
-                st.info("No se encontraron resultados para este concepto")
-        except Exception as e:
-            st.error(f"Error al buscar concepto: {str(e)}")
+        with col2:
+            st.subheader("Configuración")
+            # TODO: Implementar configuración
+        
+        if st.button("Cerrar Sesión"):
+            del st.session_state.user
+            st.rerun()
 
 # Footer
 st.markdown("---")

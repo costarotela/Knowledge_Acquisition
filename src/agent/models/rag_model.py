@@ -42,6 +42,99 @@ class RAGResponse(BaseModel):
     reasoning: str
     follow_up: List[str]
 
+class KnowledgeAcquisitionRAG:
+    """Agente RAG para adquisición de conocimiento."""
+    
+    def __init__(self):
+        """Inicializa el agente RAG."""
+        self.domain_categorizer = DomainCategorizer()
+        self.concept_extractor = ConceptExtractor()
+        self.video_processor = VideoProcessor(AGENT_CONFIG["video_processor"])
+        self.document_processor = DocumentProcessor(AGENT_CONFIG["document_processor"])
+        self.web_processor = WebProcessor(AGENT_CONFIG["web_processor"])
+        self.initialized = False
+    
+    async def initialize(self):
+        """Inicializa los componentes del agente."""
+        if self.initialized:
+            return
+        
+        try:
+            logger.info("Inicializando agente RAG...")
+            # TODO: Cargar modelos y recursos necesarios
+            self.initialized = True
+            logger.info("Agente RAG inicializado correctamente")
+        except Exception as e:
+            logger.error(f"Error inicializando agente RAG: {str(e)}")
+            raise
+    
+    @requires_auth(Permission.EXECUTE_SEARCH)
+    async def process_source(self, source: str, source_type: str = None) -> Dict[str, Any]:
+        """Procesa una fuente de información."""
+        try:
+            # 1. Determinar el tipo de fuente si no se especifica
+            if not source_type:
+                source_type = await self._detect_source_type(source)
+            
+            # 2. Seleccionar el procesador adecuado
+            processor = self._get_processor(source_type)
+            
+            # 3. Validar la fuente
+            if not await processor.validate_source(source):
+                raise ValueError(f"Fuente no válida para el tipo {source_type}")
+            
+            # 4. Extraer contenido
+            content = await processor.extract_content(source)
+            
+            # 5. Categorizar el contenido
+            domains = self.domain_categorizer.categorize(content["text"])
+            
+            # 6. Extraer conceptos y relaciones
+            knowledge_graph = self.concept_extractor.extract_knowledge_graph(
+                content["text"],
+                domains
+            )
+            
+            # 7. Procesar y estructurar el conocimiento
+            processed_content = await processor.process_content(content)
+            
+            return {
+                "source": source,
+                "type": source_type,
+                "content": processed_content,
+                "domains": domains,
+                "knowledge_graph": knowledge_graph
+            }
+            
+        except Exception as e:
+            logger.error(f"Error procesando fuente {source}: {str(e)}")
+            raise
+    
+    async def _detect_source_type(self, source: str) -> str:
+        """Detecta el tipo de fuente."""
+        if 'youtube.com' in source or 'youtu.be' in source:
+            return 'video'
+        elif any(source.endswith(ext) for ext in ['.pdf', '.doc', '.docx', '.txt', '.xls', '.xlsx']):
+            return 'document'
+        elif source.startswith(('http://', 'https://')):
+            return 'web'
+        else:
+            raise ValueError("No se pudo determinar el tipo de fuente")
+    
+    def _get_processor(self, source_type: str):
+        """Obtiene el procesador adecuado para el tipo de fuente."""
+        processors = {
+            'video': self.video_processor,
+            'document': self.document_processor,
+            'web': self.web_processor
+        }
+        
+        processor = processors.get(source_type)
+        if not processor:
+            raise ValueError(f"Tipo de fuente no soportado: {source_type}")
+            
+        return processor
+
 class AgenticNutritionRAG:
     """Modelo RAG especializado en nutrición."""
     
@@ -89,6 +182,26 @@ class AgenticNutritionRAG:
             input_variables=["context", "question"]
         )
         
+        self.knowledge_scout = KnowledgeScout(AGENT_CONFIG["knowledge_scout"])
+        self.fact_validator = FactValidator(AGENT_CONFIG["fact_validator"])
+        self.knowledge_synthesizer = KnowledgeSynthesizer(AGENT_CONFIG["knowledge_synthesizer"])
+        self.meta_evaluator = MetaEvaluator(AGENT_CONFIG["meta_evaluator"])
+        self.initialized = False
+    
+    async def initialize(self):
+        """Inicializa los componentes del agente."""
+        if self.initialized:
+            return
+        
+        try:
+            logger.info("Inicializando agente RAG...")
+            # TODO: Cargar modelos y recursos necesarios
+            self.initialized = True
+            logger.info("Agente RAG inicializado correctamente")
+        except Exception as e:
+            logger.error(f"Error inicializando agente RAG: {str(e)}")
+            raise
+    
     async def process_video(self, 
                           title: str,
                           channel: str, 
@@ -218,3 +331,23 @@ class AgenticNutritionRAG:
             reasoning="Respuesta basada en coincidencia de palabras clave y similitud semántica",
             follow_up=followup_questions
         )
+
+    async def query_knowledge(self, query: str) -> Dict[str, Any]:
+        """Consulta la base de conocimientos."""
+        try:
+            # 1. Buscar información relevante
+            search_results = await self.knowledge_scout.execute(query)
+            
+            # 2. Validar y sintetizar respuesta
+            validated_info = await self.fact_validator.execute(search_results.data)
+            knowledge = await self.knowledge_synthesizer.execute(validated_info.data)
+            
+            return {
+                "answer": knowledge.data.summary,
+                "sources": [node.sources for node in knowledge.data.nodes],
+                "confidence": knowledge.data.confidence
+            }
+            
+        except Exception as e:
+            logger.error(f"Error consultando conocimiento: {str(e)}")
+            raise
