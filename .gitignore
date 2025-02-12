@@ -20,12 +20,16 @@ wheels/
 .installed.cfg
 *.egg
 
-# Virtual Environment
+# Environment
 .env
-.venv
-env/
-venv/
-ENV/
+*.env
+
+# Conda
+/envs/
+.conda/
+/conda-meta/
+/conda-bld/
+environment.yml.lock
 
 # IDE
 .idea/
