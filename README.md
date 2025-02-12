@@ -1,9 +1,15 @@
-# Knowledge Acquisition Agent
+# Knowledge Acquisition Agent 
 
 Un agente inteligente especializado en adquisición y síntesis de conocimiento, utilizando GPT-4 y técnicas avanzadas de procesamiento de lenguaje natural.
 
 ## Características
 
+- Procesamiento de múltiples fuentes de conocimiento
+- Análisis semántico profundo
+- Generación de resúmenes y síntesis
+- Almacenamiento vectorial eficiente
+- API REST para integración
+- Interfaz web interactiva
 - 🔍 **Búsqueda Inteligente**: Búsqueda y extracción de información relevante de múltiples fuentes
 - ✅ **Validación de Información**: Verificación automática de la calidad y confiabilidad de la información
 - 🧠 **Síntesis de Conocimiento**: Generación de resúmenes coherentes y estructurados
@@ -18,12 +24,14 @@ El sistema está compuesto por varios agentes especializados:
 3. **KnowledgeSynthesizer**: Sintetiza y estructura el conocimiento
 4. **MetaEvaluator**: Evalúa la calidad del conocimiento adquirido
 
-## Instalación
-
-### Requisitos
+## Requisitos
 
 - Python 3.11+
 - Conda (recomendado)
+- OpenAI API Key
+- Supabase (opcional, para almacenamiento)
+
+## Instalación
 
 ### Configuración del Entorno
 
