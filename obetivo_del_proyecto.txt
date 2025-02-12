@@ -1,12 +1,16 @@
 <OBJETIVO>
 Extraer, procesar y almacenar conocmientos de diferentes fuentes de informacion.
-fuentes de informacion: 1- videos de youtube sobre TEMAS categorizando mediante funcionalidades del Agente hasta que se transforme radicalmente en un experto segun la categoria/tema.
-			2- herramientas avazadas de scaping
+fuentes de informacion: 
+            1- videos de youtube sobre TEMAS categorizando mediante funcionalidades del Agente hasta que se transforme radicalmente en un experto segun la categoria/tema.
+			2- herramientas avazadas de rastreo y busqueda web con API Brave (https://github.com/coleam00/ottomator-agents/tree/main/pydantic-ai-advanced-researcher)
 			3- wikipedia y otras fuentes de infromacion
-			4- github 
-			5- archivos PDF,XLS,DOC,TXT
-			6- IMAGENES, AUDIO Y VIDEO
-* Los conocmientos que se vayan adquieirndo deben ir incrementando la base de conocimentos categorizada mediante tecnicas con uso de herramientas de inteligencia artifical Agentic RAG.
+			4- github (https://github.com/coleam00/ottomator-agents/tree/main/pydantic-github-agent)
+			5- analisis y resumen y almacenamito de archivos PDF,XLS,DOC,TXT
+			6- procesamiento de IMAGENES, AUDIO Y VIDEO qiue genere base de conicimentos tridimensional 
+            (revisar)
+            7- YoutubeSummarizer agent (https://github.com/coleam00/ottomator-agents/tree/main/youtube-summary-agent)
+
+* Los conocmientos que se vayan adquiriendo deben ir incrementando la base de conocimentos categorizada mediante tecnicas con uso de herramientas de inteligencia artifical Agentic RAG.
 * A medida que se vaya incorporando mas infromacion este agente debe ser capaz y preciso en sus respuestas.
 * Otra caracteritica que debe tener este agente es la posibilidad de razonar sobre sus propios datos relevados y sacar sus conclusiones mostrando los resultados para que el adinistrador evalue y consolide
 <OBJETIVO>
