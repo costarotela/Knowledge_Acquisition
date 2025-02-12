@@ -4,18 +4,18 @@
 
 The Knowledge Acquisition project is currently in active development. Here's a high-level overview of the project status:
 
-### Completed Features ✅
+### Completed Features 
 
 - Basic project structure and architecture
 - Core components implementation
 - Initial documentation setup
 - GitHub repository and CI/CD pipeline
-- Development environment configuration
+- Standardized development environment (conda)
 - Basic scraping functionality
 - Vector store integration
 - RAG system prototype
 
-### In Progress 🚧
+### In Progress 
 
 - Expanding test coverage
 - Enhancing documentation
@@ -24,7 +24,7 @@ The Knowledge Acquisition project is currently in active development. Here's a h
 - Adding more data sources
 - Performance optimization
 
-### Planned Features 📋
+### Planned Features 
 
 - Advanced UI/UX improvements
 - Additional data source integrations
@@ -32,6 +32,19 @@ The Knowledge Acquisition project is currently in active development. Here's a h
 - Automated knowledge validation
 - Performance monitoring dashboard
 - API rate limiting and security
+
+## Development Environment
+
+### Python Environment
+
+- Using conda environment: `knowledge-acquisition`
+- Python version: 3.11
+- Key dependencies:
+  - PyTorch
+  - OpenAI
+  - FastAPI
+  - ChromaDB
+  - Langchain
 
 ## Key Metrics
 

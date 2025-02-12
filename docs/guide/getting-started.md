@@ -3,6 +3,7 @@
 ## Prerequisites
 
 - Python 3.11 or higher
+- Conda (Miniconda or Anaconda)
 - Git
 - OpenAI API key
 - PostgreSQL (for vector storage)
@@ -15,18 +16,13 @@ git clone https://github.com/costarotela/Knowledge_Acquisition.git
 cd Knowledge_Acquisition
 ```
 
-2. Create and activate a virtual environment:
+2. Create and activate the conda environment:
 ```bash
-python -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
+conda env create -f environment.yml
+conda activate knowledge-acquisition
 ```
 
-3. Install dependencies:
-```bash
-pip install -r requirements.txt
-```
-
-4. Set up environment variables:
+3. Set up environment variables:
 ```bash
 cp .env.example .env
 # Edit .env with your configuration
