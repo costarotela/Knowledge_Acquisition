@@ -2,7 +2,7 @@ site_name: Knowledge Acquisition Agent
 site_description: Documentation for the Knowledge Acquisition Agent project
 site_author: Pablo
 repo_url: https://github.com/costarotela/Knowledge_Acquisition
-site_url: https://costarotela.github.io/Knowledge_Acquisition/
+site_url: https://costarotela.github.io/Knowledge_Acquisition
 
 theme:
   name: material
@@ -52,50 +52,27 @@ markdown_extensions:
   - meta
   - toc:
       permalink: true
-  - pymdownx.arithmatex
-  - pymdownx.betterem:
-      smart_enable: all
-  - pymdownx.caret
-  - pymdownx.critic
-  - pymdownx.details
-  - pymdownx.emoji:
-      emoji_index: !!python/name:materialx.emoji.twemoji
-      emoji_generator: !!python/name:materialx.emoji.to_svg
-  - pymdownx.highlight
+  - pymdownx.highlight:
+      anchor_linenums: true
   - pymdownx.inlinehilite
-  - pymdownx.magiclink
-  - pymdownx.mark
-  - pymdownx.smartsymbols
-  - pymdownx.superfences:
-      custom_fences:
-        - name: mermaid
-          class: mermaid
-          format: !!python/name:pymdownx.superfences.fence_code_format
-  - pymdownx.tasklist:
-      custom_checkbox: true
-  - pymdownx.tilde
+  - pymdownx.snippets
+  - pymdownx.superfences
+  - attr_list
+  - def_list
+  - tables
+  - pymdownx.emoji:
+      emoji_index: !!python/name:material.extensions.emoji.twemoji
+      emoji_generator: !!python/name:material.extensions.emoji.to_svg
 
 plugins:
   - search
   - minify:
       minify_html: true
   - git-revision-date-localized:
-      type: datetime
-  - mkdocstrings:
-      default_handler: python
-      handlers:
-        python:
-          rendering:
-            show_source: true
-      watch:
-        - src
+      type: date
 
 extra:
   social:
     - icon: fontawesome/brands/github
       link: https://github.com/costarotela/Knowledge_Acquisition
-    - icon: fontawesome/brands/python
-      link: https://pypi.org/project/knowledge-acquisition/
-  
-  version:
-    provider: mike
+  generator: false
