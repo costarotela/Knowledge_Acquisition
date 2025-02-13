@@ -1,26 +1,21 @@
 """
 RAG Agent implementation with agentic capabilities.
 """
-from typing import Dict, Any, List, Optional, Tuple
+from typing import Dict, Any, List, Optional
 import logging
-import asyncio
 from datetime import datetime
 
-from langchain.vectorstores import Chroma
-from langchain.embeddings import OpenAIEmbeddings
-from langchain.chat_models import ChatOpenAI
-from langchain.chains import LLMChain
-from langchain.prompts import PromptTemplate
-from langchain.retrievers import ContextualCompressionRetriever
-from langchain.retrievers.document_compressors import LLMChainExtractor
+from langchain_community.chat_models import ChatOpenAI
 
 from ...base_agents.knowledge_agent import KnowledgeAgent
 from core_system.agent_orchestrator.base import Task, TaskResult
 from .schemas import (
-    QueryType, ReasoningStep, CitationInfo, QueryContext,
-    ReasoningChain, KnowledgeFragment, GeneratedResponse,
-    AgentAction, AgentState
+    QueryType, GeneratedResponse, AgentState,
+    KnowledgeFragment
 )
+from .reasoning import ReasoningEngine
+from .knowledge_manager import KnowledgeManager
+from langchain import PromptTemplate, LLMChain
 
 logger = logging.getLogger(__name__)
 
@@ -31,428 +26,202 @@ class RAGAgent(KnowledgeAgent):
         """Initialize RAG agent."""
         super().__init__(*args, **kwargs)
         
-        # LLM settings
+        # Initialize components
         self.llm = ChatOpenAI(
             temperature=0.7,
             model_name=self.config.get("model_name", "gpt-4")
         )
         
-        # Vector store settings
-        self.embeddings = OpenAIEmbeddings()
-        self.vector_store = Chroma(
-            embedding_function=self.embeddings,
-            persist_directory=self.config.get("vector_store_path")
-        )
+        self.knowledge_manager = KnowledgeManager(self.config)
+        self.reasoning_engine = ReasoningEngine(self.llm, self.config)
         
-        # Retrieval settings
-        self.retriever = self.vector_store.as_retriever(
-            search_type="similarity",
-            search_kwargs={"k": self.config.get("max_documents", 5)}
-        )
-        
-        # Compression for better context
-        self.compressor = LLMChainExtractor.from_llm(self.llm)
-        self.compressed_retriever = ContextualCompressionRetriever(
-            base_compressor=self.compressor,
-            base_retriever=self.retriever
-        )
-        
-        # Chain settings
-        self.reasoning_chain = self._create_reasoning_chain()
-        self.generation_chain = self._create_generation_chain()
-        
-        # Agent state
+        # Initialize state
         self.state = AgentState()
     
-    async def _process_extraction(self, task: Task) -> TaskResult:
-        """Process knowledge extraction from query."""
+    async def process_task(self, task: Task) -> TaskResult:
+        """Process a task assigned to the agent."""
         try:
-            query = task.input_data["query"]
-            query_type = task.input_data.get("query_type", QueryType.FACTUAL)
+            self.state.current_task = task.task_id
             
-            # Create query context
-            context = QueryContext(
-                query_type=query_type,
-                required_depth=task.input_data.get("depth", 3),
-                temporal_context=task.input_data.get("temporal_context"),
-                domain_context=task.input_data.get("domain_context"),
-                user_context=task.input_data.get("user_context")
-            )
-            
-            # Execute reasoning chain
-            start_time = datetime.now()
-            reasoning_result = await self._execute_reasoning(query, context)
-            
-            if not reasoning_result:
+            # Extract query from task
+            query = task.data.get("query")
+            if not query:
                 return TaskResult(
                     success=False,
-                    error="Failed to execute reasoning chain"
+                    error="No query provided in task data"
                 )
             
             # Generate response
-            response = await self._generate_response(
-                query,
-                reasoning_result,
-                context
-            )
+            response = await self.generate_response(query)
             
-            if not response:
-                return TaskResult(
-                    success=False,
-                    error="Failed to generate response"
-                )
-            
-            # Store generated knowledge
-            if response.generated_knowledge:
-                success = await self._store_knowledge(
-                    [response.generated_knowledge],
-                    {"generated": 0.8}
-                )
-                
-                if not success:
-                    logger.warning("Failed to store generated knowledge")
-            
-            return TaskResult(
+            # Update task result
+            result = TaskResult(
                 success=True,
-                data=response.dict(),
-                metrics={
-                    "reasoning_steps": len(reasoning_result.steps),
-                    "citations_used": len(reasoning_result.citations),
-                    "execution_time": (datetime.now() - start_time).total_seconds()
+                data={
+                    "response": response.response_text,
+                    "reasoning": response.reasoning_chain.dict(),
+                    "confidence": response.reasoning_chain.confidence_score
                 }
             )
             
+            # Store any new knowledge generated
+            if response.generated_knowledge:
+                await self._store_generated_knowledge(response.generated_knowledge)
+            
+            return result
+            
         except Exception as e:
-            logger.error(f"Error in RAG extraction: {e}")
+            logger.error(f"Error processing task: {str(e)}")
             return TaskResult(
                 success=False,
                 error=str(e)
             )
+        
+        finally:
+            self.state.clear_working_memory()
     
-    async def _execute_reasoning(
+    async def generate_response(self, query: str) -> GeneratedResponse:
+        """Generate a response to a query."""
+        # Retrieve relevant knowledge
+        knowledge = await self.knowledge_manager.retrieve_knowledge(query)
+        
+        # Generate reasoning chain
+        reasoning_chain = await self.reasoning_engine.generate_reasoning_chain(
+            query,
+            knowledge
+        )
+        
+        # Generate final response
+        response = await self._generate_final_response(
+            query,
+            reasoning_chain,
+            knowledge
+        )
+        
+        return response
+    
+    async def _generate_final_response(
         self,
         query: str,
-        context: QueryContext
-    ) -> Optional[ReasoningChain]:
-        """Execute the reasoning chain."""
-        try:
-            # Initialize reasoning chain
-            chain = ReasoningChain(
-                query=query,
-                context=context,
-                execution_time=0
-            )
-            
-            start_time = datetime.now()
-            
-            # Retrieve relevant documents
-            docs = await self._retrieve_relevant_documents(query, context)
-            
-            # Execute reasoning steps
-            current_step = 1
-            current_conclusion = None
-            
-            while current_step <= context.required_depth:
-                # Create reasoning step
-                step = await self._execute_reasoning_step(
-                    query,
-                    current_conclusion,
-                    docs,
-                    current_step,
-                    context
-                )
-                
-                if not step:
-                    break
-                
-                chain.steps.append(step)
-                current_conclusion = step.intermediate_conclusion
-                
-                # Add citations
-                for evidence in step.evidence:
-                    citation = CitationInfo(
-                        source_id=evidence["source_id"],
-                        source_type=evidence["source_type"],
-                        content_snippet=evidence["content"],
-                        relevance_score=evidence["relevance"],
-                        context=evidence.get("context", {})
-                    )
-                    chain.citations.append(citation)
-                
-                current_step += 1
-            
-            # Calculate final confidence
-            chain.final_conclusion = current_conclusion
-            chain.confidence_score = self._calculate_chain_confidence(chain)
-            chain.execution_time = (datetime.now() - start_time).total_seconds()
-            
-            return chain
-            
-        except Exception as e:
-            logger.error(f"Error executing reasoning: {e}")
-            return None
-    
-    async def _retrieve_relevant_documents(
-        self,
-        query: str,
-        context: QueryContext
-    ) -> List[KnowledgeFragment]:
-        """Retrieve relevant documents with compression."""
-        try:
-            # Record action
-            self.state.add_action(AgentAction(
-                action_type="retrieval",
-                description="Retrieving relevant documents",
-                inputs={"query": query, "context": context.dict()}
-            ))
-            
-            # Get compressed documents
-            docs = await self.compressed_retriever.aget_relevant_documents(query)
-            
-            # Convert to knowledge fragments
-            fragments = []
-            for doc in docs:
-                fragment = KnowledgeFragment(
-                    id=doc.metadata.get("id", "unknown"),
-                    content=doc.page_content,
-                    metadata=doc.metadata,
-                    confidence=doc.metadata.get("confidence", 0.8)
-                )
-                fragments.append(fragment)
-            
-            return fragments
-            
-        except Exception as e:
-            logger.error(f"Error retrieving documents: {e}")
-            return []
-    
-    async def _execute_reasoning_step(
-        self,
-        query: str,
-        previous_conclusion: Optional[str],
-        documents: List[KnowledgeFragment],
-        step_number: int,
-        context: QueryContext
-    ) -> Optional[ReasoningStep]:
-        """Execute a single reasoning step."""
-        try:
-            # Record action
-            self.state.add_action(AgentAction(
-                action_type="reasoning",
-                description=f"Executing reasoning step {step_number}",
-                inputs={
-                    "query": query,
-                    "previous_conclusion": previous_conclusion,
-                    "documents": len(documents)
-                }
-            ))
-            
-            # Prepare evidence
-            evidence = []
-            for doc in documents:
-                evidence.append({
-                    "source_id": doc.id,
-                    "source_type": doc.metadata.get("type", "unknown"),
-                    "content": doc.content,
-                    "relevance": self._calculate_relevance(doc, query)
-                })
-            
-            # Execute reasoning chain
-            result = await self.reasoning_chain.arun({
-                "query": query,
-                "previous_conclusion": previous_conclusion,
-                "evidence": evidence,
-                "step_number": step_number,
-                "context": context.dict()
-            })
-            
-            # Create reasoning step
-            step = ReasoningStep(
-                step_number=step_number,
-                description=result["description"],
-                evidence=evidence,
-                confidence=result["confidence"],
-                intermediate_conclusion=result["conclusion"]
-            )
-            
-            return step
-            
-        except Exception as e:
-            logger.error(f"Error executing reasoning step: {e}")
-            return None
-    
-    async def _generate_response(
-        self,
-        query: str,
-        reasoning: ReasoningChain,
-        context: QueryContext
-    ) -> Optional[GeneratedResponse]:
+        reasoning_chain: ReasoningChain,
+        knowledge: List[KnowledgeFragment]
+    ) -> GeneratedResponse:
         """Generate final response with supporting evidence."""
+        response = GeneratedResponse(
+            response_text=reasoning_chain.final_conclusion,
+            reasoning_chain=reasoning_chain,
+            supporting_fragments=knowledge
+        )
+        
+        # Generate new knowledge if confidence is high
+        if reasoning_chain.confidence_score > self.config.get("knowledge_generation_threshold", 0.8):
+            new_knowledge = await self._generate_new_knowledge(
+                query,
+                reasoning_chain
+            )
+            response.generated_knowledge = new_knowledge
+        
+        return response
+    
+    async def _generate_new_knowledge(
+        self,
+        query: str,
+        reasoning: ReasoningChain
+    ) -> Dict[str, Any]:
+        """Generate new knowledge from reasoning chain."""
         try:
-            # Record action
-            self.state.add_action(AgentAction(
-                action_type="generation",
-                description="Generating final response",
-                inputs={
-                    "query": query,
-                    "reasoning_steps": len(reasoning.steps)
+            # Create generation prompt
+            prompt = PromptTemplate(
+                template="""
+                Based on the reasoning chain, generate new knowledge that can be added to our knowledge base.
+                Consider:
+                1. Novel insights or patterns
+                2. Relationships between concepts
+                3. Generalizable principles
+                4. Edge cases or exceptions
+                
+                Query: {query}
+                Reasoning Steps:
+                {steps}
+                Final Conclusion: {conclusion}
+                
+                Output as JSON:
+                {
+                    "content": "new knowledge statement",
+                    "type": "insight|relationship|principle|exception",
+                    "confidence": float,
+                    "metadata": {
+                        "derived_from": "source information",
+                        "requires_validation": bool,
+                        "domain": "knowledge domain"
+                    }
                 }
-            ))
-            
-            # Generate response
-            result = await self.generation_chain.arun({
-                "query": query,
-                "reasoning_chain": reasoning.dict(),
-                "context": context.dict()
-            })
-            
-            # Get supporting fragments
-            supporting_fragments = []
-            for citation in reasoning.citations:
-                fragment = KnowledgeFragment(
-                    id=citation.source_id,
-                    content=citation.content_snippet,
-                    metadata=citation.context,
-                    confidence=citation.relevance_score
-                )
-                supporting_fragments.append(fragment)
-            
-            # Create response
-            response = GeneratedResponse(
-                response_text=result["response"],
-                reasoning_chain=reasoning,
-                supporting_fragments=supporting_fragments,
-                generated_knowledge=result.get("generated_knowledge"),
-                metadata={
-                    "model": self.llm.model_name,
-                    "timestamp": datetime.now().isoformat()
-                }
+                """,
+                input_variables=["query", "steps", "conclusion"]
             )
             
-            return response
+            # Create generation chain
+            chain = LLMChain(llm=self.llm, prompt=prompt)
             
+            # Generate new knowledge
+            result = await chain.arun(
+                query=query,
+                steps="\n".join([
+                    f"{s.step_number}. {s.description} -> {s.intermediate_conclusion}"
+                    for s in reasoning.steps
+                ]),
+                conclusion=reasoning.final_conclusion
+            )
+            
+            # Parse result
+            try:
+                import json
+                knowledge = json.loads(result)
+                
+                # Validate knowledge
+                if not knowledge.get("content") or not knowledge.get("type"):
+                    raise ValueError("Invalid knowledge format")
+                
+                # Add generation metadata
+                knowledge["metadata"].update({
+                    "generated_by": "rag_agent",
+                    "generation_time": datetime.now().isoformat(),
+                    "source_query": query,
+                    "reasoning_confidence": reasoning.confidence_score
+                })
+                
+                return knowledge
+                
+            except json.JSONDecodeError:
+                logger.error("Failed to parse generated knowledge")
+                return None
+                
         except Exception as e:
-            logger.error(f"Error generating response: {e}")
+            logger.error(f"Error generating new knowledge: {str(e)}")
             return None
     
-    def _create_reasoning_chain(self) -> LLMChain:
-        """Create the reasoning chain."""
-        template = """
-        Given the following context and evidence, reason about the query step by step.
-        
-        Query: {query}
-        Previous Conclusion: {previous_conclusion}
-        Step Number: {step_number}
-        Context: {context}
-        
-        Evidence:
-        {evidence}
-        
-        Provide:
-        1. A description of this reasoning step
-        2. A confidence score (0-1)
-        3. An intermediate conclusion
-        
-        Output as JSON:
-        {
-            "description": "step description",
-            "confidence": float,
-            "conclusion": "intermediate conclusion"
-        }
-        """
-        
-        prompt = PromptTemplate(
-            template=template,
-            input_variables=[
-                "query", "previous_conclusion",
-                "evidence", "step_number", "context"
-            ]
-        )
-        
-        return LLMChain(llm=self.llm, prompt=prompt)
-    
-    def _create_generation_chain(self) -> LLMChain:
-        """Create the generation chain."""
-        template = """
-        Generate a comprehensive response based on the reasoning chain.
-        
-        Query: {query}
-        Reasoning Chain: {reasoning_chain}
-        Context: {context}
-        
-        Provide:
-        1. A clear and concise response
-        2. Any new knowledge generated during reasoning
-        
-        Output as JSON:
-        {
-            "response": "final response text",
-            "generated_knowledge": {
-                "type": "knowledge type",
-                "content": "new knowledge",
-                "confidence": float
-            }
-        }
-        """
-        
-        prompt = PromptTemplate(
-            template=template,
-            input_variables=["query", "reasoning_chain", "context"]
-        )
-        
-        return LLMChain(llm=self.llm, prompt=prompt)
-    
-    def _calculate_chain_confidence(self, chain: ReasoningChain) -> float:
-        """Calculate overall confidence of reasoning chain."""
-        if not chain.steps:
-            return 0.0
-        
-        # Weight later steps more heavily
-        total_weight = 0
-        weighted_sum = 0
-        
-        for i, step in enumerate(chain.steps, 1):
-            weight = i  # Linear weight increase
-            total_weight += weight
-            weighted_sum += step.confidence * weight
-        
-        return weighted_sum / total_weight
-    
-    def _calculate_relevance(
+    async def _store_generated_knowledge(
         self,
-        fragment: KnowledgeFragment,
-        query: str
-    ) -> float:
-        """Calculate relevance of a fragment to query."""
+        knowledge: Dict[str, Any]
+    ) -> bool:
+        """Store newly generated knowledge."""
         try:
-            # Simple cosine similarity if embeddings available
-            if fragment.embedding and hasattr(self, 'query_embedding'):
-                return self._cosine_similarity(
-                    fragment.embedding,
-                    self.query_embedding
-                )
+            fragment = KnowledgeFragment(
+                id=f"generated_{datetime.now().timestamp()}",
+                content=knowledge["content"],
+                metadata={
+                    "source": "rag_agent",
+                    "generation_time": datetime.now().isoformat(),
+                    **knowledge.get("metadata", {})
+                },
+                confidence=knowledge.get("confidence", 0.8)
+            )
             
-            # Fallback to metadata-based scoring
-            score = 0.7  # Base score
+            if self.knowledge_manager.validate_fragment(fragment):
+                return await self.knowledge_manager.store_knowledge([fragment])
             
-            # Adjust based on metadata
-            if fragment.metadata.get("type") == "direct_answer":
-                score += 0.2
-            elif fragment.metadata.get("type") == "related_context":
-                score += 0.1
+            return False
             
-            # Confidence impact
-            score *= fragment.confidence
-            
-            return min(1.0, score)
-            
-        except Exception:
-            return 0.5
-    
-    @staticmethod
-    def _cosine_similarity(v1: List[float], v2: List[float]) -> float:
-        """Calculate cosine similarity between vectors."""
-        dot_product = sum(x * y for x, y in zip(v1, v2))
-        norm1 = sum(x * x for x in v1) ** 0.5
-        norm2 = sum(x * x for x in v2) ** 0.5
-        return dot_product / (norm1 * norm2) if norm1 * norm2 != 0 else 0
+        except Exception as e:
+            logger.error(f"Error storing generated knowledge: {str(e)}")
+            return False

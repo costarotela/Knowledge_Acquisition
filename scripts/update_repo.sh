@@ -7,28 +7,31 @@ NC='\033[0m'
 
 echo -e "${YELLOW}Actualizando repositorio...${NC}"
 
-# Asegurar que estamos en la rama feature/modular-architecture
-BRANCH=$(git branch --show-current)
-if [ "$BRANCH" != "feature/modular-architecture" ]; then
-    echo -e "${YELLOW}Cambiando a rama feature/modular-architecture...${NC}"
-    git checkout feature/modular-architecture
-fi
+# Activar entorno conda
+echo -e "${GREEN}Activando entorno conda...${NC}"
+source ~/miniconda3/etc/profile.d/conda.sh
+conda activate knowledge-acquisition
 
-# Agregar archivos nuevos y modificados
-echo -e "${YELLOW}Agregando archivos nuevos y modificados...${NC}"
+# Actualizar dependencias
+echo -e "${GREEN}Actualizando dependencias...${NC}"
+pip install -r requirements.txt
+
+# Limpiar archivos temporales
+echo -e "${GREEN}Limpiando archivos temporales...${NC}"
+find . -type f -name "*.pyc" -delete
+find . -type d -name "__pycache__" -delete
+
+# Actualizar git
+echo -e "${GREEN}Actualizando git...${NC}"
 git add .
+git status
 
-# Remover archivos eliminados
-echo -e "${YELLOW}Removiendo archivos eliminados del tracking...${NC}"
-git add -u
+# Solicitar mensaje de commit
+echo -e "${YELLOW}Ingrese mensaje de commit:${NC}"
+read commit_message
 
-# Crear commit con timestamp
-TIMESTAMP=$(date +"%Y%m%d_%H%M%S")
-echo -e "${YELLOW}Creando commit...${NC}"
-git commit -m "refactor: Actualización de arquitectura modular [$TIMESTAMP]"
-
-# Push a la rama
-echo -e "${YELLOW}Push a GitHub...${NC}"
-git push origin feature/modular-architecture
+# Realizar commit y push
+git commit -m "$commit_message"
+git push origin main
 
 echo -e "${GREEN}¡Repositorio actualizado exitosamente!${NC}"
