@@ -1,0 +1,71 @@
+version: '3.8'
+
+services:
+  # Core Knowledge Base
+  vector_db:
+    image: ghcr.io/chroma-core/chroma:latest
+    ports:
+      - "8000:8000"
+    volumes:
+      - vector_data:/chroma/data
+    
+  graph_db:
+    image: neo4j:5.12
+    ports:
+      - "7474:7474"  # HTTP
+      - "7687:7687"  # Bolt
+    environment:
+      - NEO4J_AUTH=neo4j/password
+    volumes:
+      - graph_data:/data
+
+  # Task Queue System
+  redis:
+    image: redis:7.2
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+
+  # API Gateway
+  api_gateway:
+    build:
+      context: .
+      dockerfile: infrastructure/api_gateway/Dockerfile
+    ports:
+      - "8080:8080"
+    depends_on:
+      - vector_db
+      - graph_db
+      - redis
+
+  # Admin Interface
+  admin_interface:
+    build:
+      context: .
+      dockerfile: admin_interface/Dockerfile
+    ports:
+      - "8501:8501"
+    depends_on:
+      - api_gateway
+
+  # Agent Workers
+  agent_worker:
+    build:
+      context: .
+      dockerfile: agents/Dockerfile
+    deploy:
+      replicas: 3
+    depends_on:
+      - redis
+      - vector_db
+      - graph_db
+    environment:
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - NEO4J_URI=bolt://graph_db:7687
+      - USE_CUDA=1
+
+volumes:
+  vector_data:
+  graph_data:
+  redis_data:

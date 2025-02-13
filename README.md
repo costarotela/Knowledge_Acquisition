@@ -1,158 +1,151 @@
-# Knowledge Acquisition Agent 🤖
+# Knowledge Acquisition System 🧠
 
-Sistema avanzado de adquisición y procesamiento de conocimiento usando múltiples modelos de lenguaje.
+Sistema integral de adquisición, procesamiento y síntesis de conocimiento usando agentes especializados y RAG avanzado.
 
-## 🗺️ Mapa del Proyecto
+## 🎯 Visión General
+
+El Knowledge Acquisition System es una plataforma avanzada diseñada para extraer, procesar y sintetizar conocimiento de múltiples fuentes usando agentes especializados, procesamiento multimodal y Agentic RAG.
+
+## 🏗️ Arquitectura
 
 ```
-src/
-├── llm/                    # Gestión de Modelos de Lenguaje
-│   ├── model_provider.py   # Proveedores de LLM (OpenAI, Groq, etc.)
-│   ├── llm_router.py       # Enrutamiento inteligente de modelos
-│   └── utils.py           # Utilidades para LLM
-├── config.py              # Configuración centralizada
-└── ...                    # Otros módulos
+Knowledge_Acquisition/
+├── core_system/                # Núcleo del Sistema
+│   ├── agent_orchestrator/     # Coordinación de Agentes
+│   ├── knowledge_base/         # Base de Conocimiento
+│   │   ├── vector_db/         # Base Vectorial
+│   │   ├── graph_db/          # Base de Grafos
+│   │   └── raw_data/          # Datos Raw
+│   ├── multimodal_processor/   # Procesador Multimodal
+│   └── monitoring/            # Sistema de Monitoreo
+│
+├── agents/                     # Agentes Especializados
+│   ├── youtube_agent/         # Agente YouTube
+│   ├── github_agent/          # Agente GitHub
+│   ├── web_research_agent/    # Agente Web
+│   └── custom_rag_agent/      # Agente RAG
+│
+├── admin_interface/           # Interface Administrativa
+│   ├── knowledge_explorer/    # Explorador de Conocimiento
+│   ├── performance_monitor/   # Monitor de Rendimiento
+│   └── validation_tools/      # Herramientas de Validación
+│
+├── api/                       # API Layer
+├── models/                    # Modelos ML
+├── docs/                      # Documentación
+└── tests/                     # Tests
 ```
 
-## 🎯 Funcionalidades Principales
+## 🚀 Características Principales
 
-### 1. Sistema Multi-Modelo (LLM)
-- **Proveedores Soportados**:
-  - OpenAI (GPT-4, GPT-3.5)
-  - Groq (Mixtral, LLaMA 2, Gemma)
-  - DeepInfra
-  - HuggingFace
-  - Soporte futuro para modelos locales
+### 1. Sistema Core
+- **Agent Orchestrator**: Coordinación centralizada de agentes
+- **Knowledge Base**: Almacenamiento unificado con bases vectoriales y de grafos
+- **Multimodal Processor**: Procesamiento de video, audio, texto e imágenes
+- **Monitoring**: Sistema completo de monitoreo y logging
 
-- **Enrutamiento Inteligente**:
-  - Selección automática del mejor modelo según la tarea
-  - Optimización de costos y rendimiento
-  - Sistema de fallback automático
+### 2. Agentes Especializados
+- **YouTube Agent**: Análisis avanzado de contenido de YouTube
+- **GitHub Agent**: Análisis de repositorios y código
+- **Web Research Agent**: Investigación web con Brave Search
+- **Custom RAG Agent**: RAG avanzado con generación de hipótesis
 
-- **Tipos de Tareas**:
-  - `CODE`: Generación y análisis de código
-  - `CHAT`: Conversación general
-  - `CLASSIFICATION`: Clasificación de texto
-  - `SUMMARY`: Generación de resúmenes
-  - `EXTRACTION`: Extracción de información
-  - `EMBEDDING`: Generación de embeddings
+### 3. Interface Administrativa
+- **Knowledge Explorer**: Visualización 3D del conocimiento
+- **Performance Monitor**: Métricas en tiempo real
+- **Validation Tools**: Herramientas de validación y control
 
-### 2. Configuración Flexible
-- **Variables de Entorno** (.env):
-  ```bash
-  # LLM Configuration
-  LLM_TYPE=openai|groq|deepinfra|huggingface|local
-  LLM_NAME=gpt-4-turbo|mixtral-groq|...
-  LLM_TEMPERATURE=0.7
-  LLM_STREAMING=False
+## 🛠️ Instalación
 
-  # API Keys
-  OPENAI_API_KEY=sk-...
-  GROQ_API_KEY=gsk-...
-  ```
-
-- **Configuración de Rutas**:
-  ```python
-  # En config.py
-  LLM_CONFIG = {
-      "routes": {
-          "CODE": "gpt4",          # Precisión
-          "CHAT": "mixtral",       # Velocidad/Costo
-          "CLASSIFICATION": "gpt35" # Suficiente
-      }
-  }
-  ```
-
-## 🚀 Guía de Uso
-
-### 1. Configuración Básica
+### Entorno Principal (Desarrollo/Producción)
 ```bash
-# 1. Clonar el repositorio
-git clone https://github.com/tu-usuario/Knowledge_Acquisition.git
-
-# 2. Crear entorno conda
+# Crear entorno principal
 conda create -n knowledge-acquisition python=3.11
 conda activate knowledge-acquisition
 
-# 3. Instalar dependencias
+# Instalar dependencias
 pip install -r requirements.txt
-
-# 4. Configurar variables de entorno
-cp .env.example .env
-# Editar .env con tus API keys
 ```
 
-### 2. Uso del Sistema Multi-Modelo
+### Entorno de Testing
+```bash
+# Crear entorno de test
+conda create -n knowledge-acq-test python=3.11
+conda activate knowledge-acq-test
 
-```python
-from src.llm.utils import get_llm_for_task
-from src.llm.llm_router import TaskType
-
-# Obtener el mejor modelo para cada tarea
-code_llm = get_llm_for_task(TaskType.CODE)      # Usa GPT-4
-chat_llm = get_llm_for_task(TaskType.CHAT)      # Usa Mixtral
-summary_llm = get_llm_for_task(TaskType.SUMMARY) # Usa el modelo configurado
+# Instalar dependencias mínimas
+pip install -r requirements-test.txt
 ```
 
-### 3. Configuración Avanzada
+## 📋 Uso
 
+### 1. Iniciar Sistema Core
 ```python
-from src.llm.llm_router import LLMRouter, TaskType
-from src.llm.model_provider import ModelType
+from core_system.agent_orchestrator import SystemOrchestrator
 
-# Crear router personalizado
-router = LLMRouter()
+# Inicializar orquestador
+orchestrator = SystemOrchestrator()
 
-# Agregar proveedores
-router.add_provider(
-    name="gpt4",
-    model_type=ModelType.OPENAI,
-    model_name="gpt-4-turbo"
+# Configurar agentes
+orchestrator.register_agent('youtube', YouTubeAgent())
+orchestrator.register_agent('github', GitHubAgent())
+orchestrator.register_agent('web', WebResearchAgent())
+orchestrator.register_agent('rag', CustomRAGAgent())
+
+# Iniciar sistema
+orchestrator.start()
+```
+
+### 2. Procesar Conocimiento
+```python
+# Procesar video de YouTube
+knowledge = orchestrator.process_source(
+    source_type='youtube',
+    url='https://youtube.com/watch?v=...'
 )
 
-router.add_provider(
-    name="mixtral",
-    model_type=ModelType.GROQ,
-    model_name="mixtral-groq"
+# Investigación web
+research = orchestrator.process_source(
+    source_type='web',
+    query='advanced AI systems'
 )
 
-# Configurar rutas
-router.set_route(TaskType.CODE, "gpt4")
-router.set_route(TaskType.CHAT, "mixtral")
-router.set_fallback("mixtral")
+# Síntesis de conocimiento
+synthesis = orchestrator.rag_agent.synthesize(
+    topic='AI Systems',
+    sources=[knowledge, research]
+)
 ```
 
-## 📋 TODO y Próximos Pasos
+## 📚 Documentación
 
-1. **Modelos Locales**
-   - [ ] Integración con llama.cpp
-   - [ ] Soporte para modelos cuantitativos
-   - [ ] Gestión de recursos locales
+Documentación detallada disponible en `/docs/`:
+- [Estructura del Sistema](docs/architecture/system_structure.md)
+- [Guía de Agentes](docs/agents.md)
+- [API Reference](docs/API.md)
 
-2. **Optimización**
-   - [ ] Sistema de caché para respuestas
-   - [ ] Balanceo de carga entre modelos
-   - [ ] Monitoreo de costos y uso
+## 🧪 Testing
 
-3. **Nuevas Funcionalidades**
-   - [ ] Más proveedores de LLM
-   - [ ] Nuevos tipos de tareas
-   - [ ] Evaluación automática de respuestas
+```bash
+# Activar entorno de test
+conda activate knowledge-acq-test
 
-## 📚 Documentación Adicional
+# Ejecutar suite completa
+pytest tests/
 
-- [Guía de Desarrollo](docs/development.md)
-- [Configuración de Modelos](docs/models.md)
-- [API Reference](docs/api.md)
+# Tests específicos
+pytest tests/test_core_system/
+pytest tests/test_agents/
+```
 
 ## 🤝 Contribución
 
 1. Fork el repositorio
-2. Crea una rama para tu feature (`git checkout -b feature/AmazingFeature`)
-3. Commit tus cambios (`git commit -m 'Add some AmazingFeature'`)
-4. Push a la rama (`git push origin feature/AmazingFeature`)
+2. Crea una rama (`git checkout -b feature/NuevaFuncionalidad`)
+3. Commit tus cambios (`git commit -m 'Agregar nueva funcionalidad'`)
+4. Push a la rama (`git push origin feature/NuevaFuncionalidad`)
 5. Abre un Pull Request
 
 ## 📄 Licencia
 
-Este proyecto está bajo la licencia MIT. Ver el archivo [LICENSE](LICENSE) para más detalles.
+Este proyecto está bajo la licencia MIT. Ver [LICENSE](LICENSE) para más detalles.

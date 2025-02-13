@@ -43,6 +43,11 @@ Knowledge_Acquisition/
 └── docs/             # Documentation
 ```
 
+## Arquitectura
+- [Diseño del Sistema](DESIGN.md)
+- [Estructura del Sistema](architecture/system_structure.md)
+- [Automatización](automation.md)
+
 ## Contributing
 
 Contributions are welcome! Please read our [Contributing Guidelines](CONTRIBUTING.md) for details on how to submit pull requests, report issues, and contribute to the project.
