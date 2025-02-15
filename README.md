@@ -57,6 +57,7 @@ specialized/[agent_name]/
 - **Academic Agent**: Búsqueda y análisis de papers académicos
 - **Social Media Agent**: Análisis de tendencias y contenido en redes sociales
 - **Custom RAG Agent**: RAG avanzado con generación de hipótesis
+- **Travel Agent**: Automatización de navegación web para búsqueda de viajes
 
 ### 3. Interface Administrativa
 - **Knowledge Explorer**: Visualización 3D del conocimiento
@@ -86,6 +87,12 @@ Los agentes especializados siguen el patrón Agentic RAG (Retrieval-Augmented Ge
 - `reasoning.py`: Análisis de contenido y credibilidad
 - `knowledge_manager.py`: Gestión de conocimiento multimedia
 - `schemas.py`: Modelos de datos para videos
+
+#### Travel Agent
+- `travel_agent.py`: Agente principal para búsqueda de viajes
+- `browser_manager.py`: Gestor de navegación web
+- `processors.py`: Procesadores de datos de viajes
+- `schemas.py`: Modelos de datos para viajes
 
 ## Interfaz Administrativa
 
@@ -344,6 +351,27 @@ trends = await agent.analyze_trends(
 )
 ```
 
+### 7. Travel Agent
+```python
+from agents.specialized.travel_agent import TravelAgent
+
+agent = TravelAgent(
+    config={
+        "browser": "chrome",
+        "headless": True,
+        "cache_dir": "./data/cache"
+    }
+)
+
+# Buscar viajes
+results = await agent.search_trips(
+    origin="Madrid",
+    destination="Tokyo",
+    departure_date="2024-03-15",
+    return_date="2024-03-22"
+)
+```
+
 ### Integración de Agentes
 
 Los agentes pueden trabajar de forma independiente o coordinada:
@@ -428,43 +456,37 @@ results = await agent.query_knowledge(
 )
 ```
 
-## Estado Actual del Proyecto (Febrero 2025)
+### Travel Agent
 
-### Componentes Completados
+```python
+from agents.specialized.travel_agent import TravelAgent, TripContext
 
-1. **Agentes Especializados con Agentic RAG**
-   - GitHub Agent: Análisis de repositorios y código
-   - YouTube Agent: Análisis de contenido multimedia
-   - Academic Agent: En proceso de refactorización
-   - Social Media Agent: En proceso de refactorización
+# Inicializar agente
+agent = TravelAgent(
+    config={
+        "browser": "chrome",
+        "headless": True,
+        "cache_dir": "./data/cache"
+    }
+)
 
-2. **Arquitectura RAG**
-   - Módulos de Procesamiento: Extracción y análisis de datos
-   - Módulos de Razonamiento: Evaluación y síntesis
-   - Gestión de Conocimiento: Almacenamiento y validación
-   - Esquemas de Datos: Modelos Pydantic
+# Definir contexto de búsqueda
+context = TripContext(
+    origin="Madrid",
+    destination="Tokyo",
+    departure_date="2024-03-15",
+    return_date="2024-03-22"
+)
 
-3. **Infraestructura**
-   - Entornos Conda configurados
-   - Dependencias actualizadas
-   - Sistema de almacenamiento vectorial
+# Buscar viajes
+results = await agent.search_trips(context)
 
-### Próximos Pasos
-
-1. **Refactorización Pendiente**
-   - Completar Academic Agent
-   - Completar Social Media Agent
-   - Actualizar tests unitarios
-
-2. **Mejoras Planificadas**
-   - Optimización de rendimiento
-   - Expansión de capacidades de razonamiento
-   - Mejora en la detección de contradicciones
-
-3. **Documentación**
-   - Expandir ejemplos de uso
-   - Añadir diagramas de arquitectura
-   - Documentar patrones de integración
+# Consultar conocimiento almacenado
+results = await agent.query_knowledge(
+    query="Mejores aerolíneas para viajar a Tokio",
+    filters={"type": "travel_tip"}
+)
+```
 
 ## Instalación y Configuración
 
@@ -1167,3 +1189,5 @@ El RAG Agent se integra con:
 - Otros agentes especializados
 
 Para más detalles, consulta la [documentación completa del RAG Agent](docs/agents/rag_agent.md).
+
+```
