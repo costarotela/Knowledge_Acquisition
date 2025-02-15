@@ -1,247 +1,254 @@
-# Travel Agent Specialized Module
+# AI Travel Agent
 
-Este módulo implementa un agente especializado para la búsqueda, comparación y análisis de paquetes turísticos utilizando browser-use para la extracción de datos.
+Sistema inteligente para búsqueda, análisis y generación de presupuestos de viajes.
 
-## Requisitos del Sistema
+## Características Principales
+
+### 1. Extracción de Datos
+- Soporte para múltiples proveedores de viajes
+- Extracción de listas con paginación y scroll infinito
+- Monitoreo de cambios en tiempo real
+- Rate limiting y caché configurable
+- Extracción de tablas y datos estructurados
+- Manejo robusto de errores y reintentos
+
+### 2. Análisis Avanzado
+- Segmentación de paquetes mediante clustering
+- Análisis de tendencias de precios
+- Cálculo de métricas estadísticas
+- Generación de insights personalizados
+- Recomendaciones basadas en preferencias
+- Análisis de sentimiento de reseñas
+
+### 3. Gestión de Ventas
+- Manejo de sesiones de venta
+- Refinamiento iterativo de búsquedas
+- Generación de presupuestos personalizados
+- Seguimiento de interacciones
+- Reportes detallados de ventas
+- Historial de búsquedas y preferencias
+
+## Requisitos
 
 - Python 3.11 o superior
-- Conda (Miniconda o Anaconda)
-- Navegadores web (se instalarán automáticamente con playwright)
-- Conexión a Internet
-- Clave API de OpenAI
+- Node.js 18+ (para Playwright)
+- Conda (recomendado para gestión de entornos)
 
-## Características
-
-- Extracción automática de datos de proveedores turísticos
-- Comparación y análisis de paquetes
-- Generación de recomendaciones personalizadas
-- Soporte para múltiples proveedores (Aero, Ola, etc.)
-- Entorno virtual aislado y específico
+### Dependencias Principales
+- browser-use >= 0.1.37
+- playwright >= 1.40
+- pydantic >= 2.10.4
+- pytest >= 7.4.3
+- pytest-asyncio >= 0.23.2
+- pytest-cov >= 4.1.0
+- langchain-openai >= 0.0.3
 
 ## Instalación
 
-### Método Automático (Recomendado)
-
-1. Clone el repositorio y navegue al directorio del agente:
+1. Crear entorno conda:
 ```bash
-cd agents/specialized/travel_agent
+conda create -n knowledge-acquisition python=3.11
+conda activate knowledge-acquisition
 ```
 
-2. Ejecute el script de instalación:
+2. Instalar dependencias:
 ```bash
-chmod +x setup.sh
-./setup.sh
-```
-
-3. Configure sus claves API en el archivo `.env`
-
-### Instalación Manual
-
-1. Crear el entorno virtual:
-```bash
-conda env create -f environment.yml
-```
-
-2. Activar el entorno:
-```bash
-conda activate travel-agent
-```
-
-3. Instalar playwright:
-```bash
+pip install -r requirements.txt
 playwright install
 ```
 
-4. Crear y configurar el archivo `.env`:
-```bash
-cp .env.example .env
-# Edite .env con sus claves API
-```
-
-## Estructura del Módulo
-
-```
-travel_agent/
-├── __init__.py           # Exporta las clases principales
-├── travel_agent.py       # Implementación principal del agente
-├── browser_manager.py    # Gestión de navegación y extracción
-├── providers.py          # Definición de proveedores
-├── schemas.py           # Modelos de datos
-├── environment.yml      # Configuración del entorno
-├── setup.sh            # Script de instalación
-└── tests/              # Pruebas unitarias
-```
-
-## Estructura de Datos
-
-### Paquete de Viaje (TravelPackage)
-
-Los paquetes de viaje deben incluir los siguientes campos obligatorios:
-
-```python
-{
-    "id": str,                    # Identificador único del paquete
-    "provider": str,              # Nombre del proveedor
-    "destination": str,           # Destino del viaje
-    "title": str,                 # Título del paquete
-    "description": str,           # Descripción detallada
-    "price": float,              # Precio del paquete
-    "currency": str,             # Moneda (USD, EUR, etc.)
-    "duration": int,             # Duración en días
-    "start_date": datetime,      # Fecha de inicio (YYYY-MM-DD)
-    "end_date": datetime,        # Fecha de fin (YYYY-MM-DD)
-    "accommodation": {           # Detalles del alojamiento
-        "name": str,
-        "type": str,
-        "location": str,
-        "rating": float,
-        "amenities": List[str],
-        "room_types": List[str]
-    },
-    "activities": List[{         # Lista de actividades
-        "name": str,
-        "description": str,
-        "duration": str,
-        "price": float,
-        "included": List[str],
-        "requirements": List[str]
-    }],
-    "included_services": List[str],  # Servicios incluidos
-    "excluded_services": List[str],  # Servicios no incluidos
-    "booking_url": str,              # URL para reservar
-    "terms_conditions": str          # Términos y condiciones
-}
-```
-
-### Validación de Datos
-
-El módulo implementa una validación estricta de los paquetes de viaje:
-
-1. **Campos Requeridos**: Todos los campos listados arriba son obligatorios
-2. **Validación de Fechas**: 
-   - Formato: YYYY-MM-DD
-   - Las fechas deben ser instancias de `datetime` o strings en el formato correcto
-3. **Validación de Precios**:
-   - Deben ser números positivos
-   - Se admiten decimales para centavos
-4. **Validación de Duración**:
-   - Debe ser un número entero positivo
-   - Representa la cantidad de días del viaje
-
-## Uso Básico
-
-```python
-from travel_agent import TravelAgent
-from core_system.knowledge_base import KnowledgeBase
-
-# Inicializar agente
-agent = TravelAgent(
-    knowledge_base=KnowledgeBase(),
-    providers=[
-        TourismProvider.create_aero_provider(),
-        TourismProvider.create_ola_provider()
-    ]
-)
-
-# Buscar paquetes
-packages = await agent.search_packages(
-    destination="Bariloche",
-    dates={
-        "start": "2025-03-01",
-        "end": "2025-03-10"
-    }
-)
-
-# Comparar y analizar
-analysis = await agent.compare_packages(packages)
-```
-
-## Uso del Módulo
-
-### Búsqueda de Paquetes
-
-```python
-from travel_agent import TravelAgent
-from datetime import datetime
-
-# Inicializar el agente
-agent = TravelAgent(knowledge_base=kb)
-
-# Buscar paquetes
-packages = await agent.search_packages(
-    destination="Bariloche",
-    dates={
-        "start": "2025-03-01",
-        "end": "2025-03-10"
-    },
-    preferences={
-        "max_price": 2000,
-        "activities": ["hiking", "skiing"]
-    }
-)
-
-# Comparar paquetes
-comparison = await agent.compare_packages(packages)
-```
-
-## Desarrollo
-
-### Configuración del Entorno de Desarrollo
-
-1. Crear rama feature:
-```bash
-git checkout -b feature/nueva-funcionalidad
-```
-
-2. Activar entorno:
-```bash
-conda activate travel-agent
-```
-
-3. Ejecutar pruebas:
+3. Verificar la instalación:
 ```bash
 pytest tests/
 ```
 
-### Agregar Nuevo Proveedor
+## Estructura del Proyecto
 
-1. Extender la clase `TourismProvider`
-2. Definir reglas de extracción específicas
-3. Implementar métodos de validación
-4. Agregar pruebas unitarias
+```
+travel_agent/
+├── core/                   # Componentes principales
+│   ├── analysis_engine.py  # Motor de análisis
+│   ├── browser_manager.py  # Gestión de navegación
+│   ├── sales_assistant.py  # Asistente de ventas
+│   └── schemas.py         # Modelos de datos
+├── tests/                 # Tests unitarios y de integración
+│   ├── test_analysis_engine.py
+│   ├── test_browser_manager.py
+│   └── test_sales_assistant.py
+├── config/               # Configuraciones
+│   ├── providers/       # Configuración de proveedores
+│   └── settings.py      # Configuración general
+├── scripts/             # Scripts de utilidad
+│   └── update.sh       # Script de actualización
+├── cache/              # Caché de datos
+└── knowledge/         # Base de conocimiento
+```
 
-## Solución de Problemas
+## Uso
 
-### Problemas Comunes
+### 1. Configuración de Proveedores
 
-1. **Error al crear el entorno conda**
-   - Verifique que tiene conda instalado: `conda --version`
-   - Actualice conda: `conda update -n base conda`
+```python
+from core.schemas import ProviderConfig
 
-2. **Error con playwright**
-   - Reinstale los navegadores: `playwright install`
-   - Verifique las dependencias del sistema: `playwright install-deps`
+config = ProviderConfig(
+    name="example_provider",
+    type="travel",
+    base_url="https://example.com",
+    requires_auth=False,
+    selectors={
+        "package_list": ".package-item",
+        "price": ".price",
+        "title": ".title"
+    },
+    data_patterns={
+        "price": r"\$(\d+)",
+        "date": r"(\d{4}-\d{2}-\d{2})"
+    },
+    extraction={
+        "list_mode": "pagination",
+        "max_items": 100,
+        "delay": 1
+    }
+)
+```
 
-3. **Errores de extracción**
-   - Verifique su conexión a Internet
-   - Confirme que las reglas de extracción están actualizadas
-   - Revise los logs en modo DEBUG
+### 2. Extracción de Datos
 
-## Notas
+```python
+from core.browser_manager import BrowserManager
 
-- Este módulo está diseñado para funcionar de manera independiente
-- Las dependencias se mantienen separadas para facilitar la modularidad
-- Se recomienda usar el entorno virtual específico para desarrollo
-- Actualice regularmente las reglas de extracción para mantener la compatibilidad con los sitios web
+# Inicializar el gestor con configuración personalizada
+browser = BrowserManager(
+    llm_model="gpt-4",  # Modelo de lenguaje para extracción inteligente
+    cache_dir="data/cache",  # Directorio de caché
+    cache_ttl=3600,  # Tiempo de vida del caché en segundos
+    headless=True  # Modo sin interfaz gráfica
+)
 
-## Contribuir
+# Extraer datos de una tabla
+table_data = await browser.extract_table_data(
+    url="https://example.com/packages",
+    table_selector="table.packages",
+    column_map={
+        "title": "td.package-title",
+        "price": "td.package-price",
+        "duration": "td.package-duration"
+    }
+)
+
+# Extraer datos de una lista
+list_data = await browser.extract_list_data(
+    url="https://example.com/offers",
+    list_selector=".offer-list",
+    item_selectors={
+        "title": ".offer-title",
+        "description": ".offer-description",
+        "price": ".offer-price"
+    }
+)
+
+# Interactuar con la página
+await browser.interact_with_page(
+    url="https://example.com/search",
+    interactions=[
+        {
+            "action": "type",
+            "selector": "#destination",
+            "target": "Cancun"
+        },
+        {
+            "action": "click",
+            "selector": "#search-btn"
+        },
+        {
+            "action": "wait",
+            "target": "2"  # Esperar 2 segundos
+        }
+    ]
+)
+
+# Extraer contenido dinámico con validación de patrones
+result = await browser.extract_dynamic_content(
+    url="https://example.com/details",
+    selectors={
+        "price": ".price-tag",
+        "dates": ".available-dates"
+    },
+    data_patterns={
+        "price": r"\$(\d+)",
+        "dates": r"(\d{2}/\d{2}/\d{4})"
+    },
+    scroll=True,  # Activar scroll automático
+    wait_for=".content-loaded"  # Esperar elemento específico
+)
+
+# Cerrar el navegador al finalizar
+await browser.close()
+```
+
+### 3. Análisis de Paquetes
+
+```python
+from core.analysis_engine import AnalysisEngine
+from core.schemas import SalesQuery
+
+query = SalesQuery(
+    client_name="Test Client",
+    destination="Cancun",
+    dates={
+        "departure": "2025-03-01",
+        "return": "2025-03-08"
+    },
+    preferences={
+        "max_budget": 2000,
+        "min_nights": 5,
+        "activities": ["snorkel", "beach"]
+    }
+)
+
+engine = AnalysisEngine()
+analysis = await engine.analyze_packages(query, packages)
+insights = analysis.insights
+recommendations = analysis.recommendations
+```
+
+### 4. Gestión de Ventas
+
+```python
+from core.sales_assistant import SalesAssistant
+from core.schemas import SessionState
+
+assistant = SalesAssistant()
+session = SessionState(client_name="Test Client")
+
+# Iniciar interacción
+await assistant.start_interaction(session)
+
+# Refinar búsqueda
+feedback = {"price": "too high", "activities": "more beach activities"}
+await assistant.refine_search(session, feedback)
+
+# Generar presupuesto
+budget = await assistant.generate_budget(session)
+```
+
+## Seguridad
+
+El proyecto utiliza el paquete `safety` para verificar vulnerabilidades en las dependencias. Para ejecutar una verificación:
+
+```bash
+safety check
+```
+
+## Contribuciones
 
 1. Fork el repositorio
-2. Cree una rama para su funcionalidad
-3. Implemente sus cambios
-4. Agregue pruebas
-5. Envíe un pull request
+2. Cree una rama para su característica (`git checkout -b feature/amazing-feature`)
+3. Commit sus cambios (`git commit -m 'Add some amazing feature'`)
+4. Push a la rama (`git push origin feature/amazing-feature`)
+5. Abra un Pull Request
 
 ## Licencia
 
-MIT License - ver archivo LICENSE para más detalles
+Este proyecto está licenciado bajo la Licencia MIT - vea el archivo [LICENSE](LICENSE) para más detalles.

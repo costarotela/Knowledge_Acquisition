@@ -1,85 +1,119 @@
-"""Fixtures for testing."""
+"""Configuración de tests."""
 
 import pytest
-from datetime import datetime
-from typing import Generator
-from pydantic import HttpUrl
+from unittest.mock import Mock, AsyncMock
 from playwright.sync_api import Browser, BrowserContext, Page, sync_playwright
-from ..providers import TourismProvider, ExtractionRules
 
-@pytest.fixture(scope="session")
-def browser() -> Generator[Browser, None, None]:
-    """Fixture para proveer un navegador para las pruebas."""
-    with sync_playwright() as p:
-        browser = p.chromium.launch()
-        yield browser
-        browser.close()
-
-@pytest.fixture
-def context(browser: Browser) -> Generator[BrowserContext, None, None]:
-    """Fixture para proveer un contexto de navegador."""
-    context = browser.new_context()
-    yield context
-    context.close()
+from agents.specialized.travel_agent.core.browser_manager import BrowserManager
+from agents.specialized.travel_agent.core.analysis_engine import AnalysisEngine
+from agents.specialized.travel_agent.core.sales_assistant import SalesAssistant
+from agents.specialized.travel_agent.core.schemas import (
+    TravelPackage, SalesQuery, Budget, SalesReport,
+    AnalysisResult, SessionState, ProviderConfig
+)
 
 @pytest.fixture
-def page(context: BrowserContext) -> Generator[Page, None, None]:
-    """Fixture para proveer una página de navegador."""
-    page = context.new_page()
-    yield page
-    page.close()
+def mock_browser():
+    """Mock del navegador."""
+    browser = Mock()
+    browser.get = AsyncMock()
+    browser.find_elements = AsyncMock()
+    browser.execute_script = AsyncMock()
+    return browser
 
 @pytest.fixture
-def mock_tourism_provider():
-    """Fixture para proveer un mock de TourismProvider."""
-    class MockTourismProvider(TourismProvider):
-        async def search_packages(self, destination, start_date, end_date, **kwargs):
-            """Mock de búsqueda de paquetes."""
-            try:
-                datetime.strptime(start_date, "%Y-%m-%d")
-                datetime.strptime(end_date, "%Y-%m-%d")
-            except ValueError:
-                raise ValueError("Invalid date format. Use YYYY-MM-DD")
-                
-            return [{
-                "id": "test-package-1",
-                "provider": self.name,
-                "destination": destination,
-                "title": "Test Package",
-                "description": "A test package",
-                "price": 1000.0,
-                "currency": "USD",
-                "duration": 10,
-                "dates": {
-                    "start": start_date,
-                    "end": end_date
-                },
-                "accommodation": {
-                    "name": "Test Hotel",
-                    "type": "hotel",
-                    "location": destination,
-                    "rating": 4.5,
-                    "amenities": ["wifi", "pool"],
-                    "room_types": ["single", "double"]
-                },
-                "activities": [{
-                    "name": "City Tour",
-                    "description": "Tour por la ciudad",
-                    "duration": "4 hours",
-                    "price": 50.0,
-                    "included": ["guide", "transport"],
-                    "requirements": ["comfortable shoes"]
-                }],
-                "included_services": ["breakfast", "airport transfer"],
-                "excluded_services": ["lunch", "dinner"],
-                "booking_url": "https://example.com/booking",
-                "terms_conditions": "Standard terms apply"
-            }]
-            
-    return MockTourismProvider(
-        name="MockProvider",
-        base_url=HttpUrl("https://mock-provider.com"),
-        supported_destinations=["Bariloche", "Mar del Plata"],
-        last_updated=datetime.now(),
-        extraction_rules=ExtractionRules()
+def browser_manager(mock_browser):
+    """Fixture para BrowserManager."""
+    return BrowserManager(browser=mock_browser)
+
+@pytest.fixture
+def analysis_engine(mock_browser):
+    """Fixture para AnalysisEngine."""
+    return AnalysisEngine(browser_manager=mock_browser)
+
+@pytest.fixture
+def sales_assistant(mock_browser):
+    """Fixture para SalesAssistant."""
+    return SalesAssistant(browser_manager=mock_browser)
+
+@pytest.fixture
+def sample_package():
+    """Paquete de ejemplo para tests."""
+    return TravelPackage(
+        id="PKG1",
+        title="Test Package",
+        description="Test Description",
+        destination="Cancun",
+        price=1500.00,
+        currency="USD",
+        duration=7,
+        start_date="2025-03-01",
+        end_date="2025-03-08",
+        provider="TestProvider",
+        url="https://test.com/pkg1",
+        accommodation=Mock(),
+        activities=["snorkel", "beach"],
+        rating=4.5
+    )
+
+@pytest.fixture
+def sample_query():
+    """Query de ejemplo para tests."""
+    return SalesQuery(
+        client_name="Test Client",
+        destination="Cancun",
+        dates={
+            "departure": "2025-03-01",
+            "return": "2025-03-08"
+        },
+        preferences={
+            "max_budget": 2000,
+            "min_nights": 5,
+            "activities": ["snorkel", "beach"]
+        }
+    )
+
+@pytest.fixture
+def sample_analysis(sample_package):
+    """Análisis de ejemplo para tests."""
+    return AnalysisResult(
+        packages=[sample_package],
+        metrics={
+            "price_mean": 1500,
+            "price_std": 200,
+            "duration_mean": 7
+        },
+        segments={
+            "standard": [sample_package]
+        },
+        recommendations=[sample_package],
+        insights={
+            "valor": "Buen valor por el precio",
+            "temporada": "Temporada alta"
+        },
+        price_trends={}
+    )
+
+@pytest.fixture
+def sample_provider_config():
+    """Configuración de proveedor para tests."""
+    return ProviderConfig(
+        name="test_provider",
+        type="travel",
+        base_url="https://test.com",
+        requires_auth=False,
+        selectors={
+            "package_list": ".package-item",
+            "price": ".price",
+            "title": ".title"
+        },
+        data_patterns={
+            "price": r"\$(\d+)",
+            "date": r"(\d{4}-\d{2}-\d{2})"
+        },
+        extraction={
+            "list_mode": "pagination",
+            "max_items": 100,
+            "delay": 1
+        }
     )

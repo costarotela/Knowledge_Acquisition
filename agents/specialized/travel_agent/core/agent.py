@@ -2,7 +2,7 @@
 Core implementation of the Travel Agent.
 """
 
-from typing import List, Dict, Optional
+from typing import List, Dict, Optional, Callable
 from datetime import datetime
 import asyncio
 import logging
@@ -13,10 +13,11 @@ try:
     from ..core_system.knowledge_base import KnowledgeBase
 except ImportError:
     # Para pruebas, usamos el mock
-    from .tests.mocks.knowledge_base import MockKnowledgeBase as KnowledgeBase
+    from ..tests.mocks.knowledge_base import MockKnowledgeBase as KnowledgeBase
 
 from .provider_manager import ProviderManager
 from .browser_manager import BrowserManager
+from .price_monitor import PriceMonitor
 from .schemas import TravelPackage, Accommodation, Activity
 
 class TravelAgent:
@@ -35,6 +36,7 @@ class TravelAgent:
         knowledge_base: KnowledgeBase,
         browser_config: Optional[Dict] = None,
         provider_credentials: Optional[Dict[str, Dict]] = None,
+        price_monitor_config: Optional[Dict] = None,
         llm_model: str = "gpt-4"
     ):
         self.knowledge_base = knowledge_base
@@ -52,8 +54,46 @@ class TravelAgent:
             credentials=provider_credentials
         )
         
+        # Configurar monitor de precios
+        self.price_monitor = PriceMonitor(
+            storage_dir=price_monitor_config.get("storage_dir") if price_monitor_config else None,
+            check_interval=price_monitor_config.get("check_interval", 3600) if price_monitor_config else 3600
+        )
+        
         self.logger = logging.getLogger(__name__)
-    
+        
+    async def start_monitoring(self):
+        """Iniciar monitoreo de precios."""
+        await self.price_monitor.start_monitoring()
+        
+    def stop_monitoring(self):
+        """Detener monitoreo de precios."""
+        self.price_monitor.stop_monitoring()
+        
+    async def create_price_alert(
+        self,
+        package: TravelPackage,
+        conditions: Dict,
+        callback: Callable
+    ):
+        """
+        Crear alerta de precio.
+        
+        Args:
+            package: Paquete a monitorear
+            conditions: Condiciones para la alerta
+            callback: Función a llamar cuando se cumpla la condición
+        """
+        return self.price_monitor.add_alert(package, conditions, callback)
+        
+    def get_price_history(self, package_id: str) -> List[Dict]:
+        """Obtener historial de precios de un paquete."""
+        return self.price_monitor.get_price_history(package_id)
+        
+    def analyze_price_trends(self, package_id: str) -> Dict:
+        """Analizar tendencias de precios de un paquete."""
+        return self.price_monitor.analyze_trends(package_id)
+
     async def search_packages(
         self,
         destination: str,
@@ -144,14 +184,14 @@ class TravelAgent:
         preferences: Dict
     ) -> Dict:
         """
-        Generar presupuesto personalizado.
+        Generar presupuesto personalizado y detallado.
         
         Args:
             packages: Lista de paquetes disponibles
             preferences: Preferencias del cliente
             
         Returns:
-            Presupuesto detallado con opciones
+            Presupuesto detallado con opciones y análisis
         """
         analysis = self.compare_packages(packages)
         max_budget = preferences.get("max_budget", float('inf'))
@@ -169,6 +209,11 @@ class TravelAgent:
                 "message": "No se encontraron paquetes que cumplan con los requisitos"
             }
         
+        # Analizar tendencias de precios
+        price_trends = {}
+        for package in suitable_packages[:3]:  # Solo los 3 mejores
+            price_trends[package.id] = self.analyze_price_trends(package.id)
+        
         # Organizar opciones
         budget = {
             "status": "success",
@@ -183,6 +228,11 @@ class TravelAgent:
                 for p in suitable_packages
                 if p.dates and "departure" in p.dates
             )),
+            "price_trends": price_trends,
+            "recommendations": self._generate_recommendations(
+                suitable_packages,
+                price_trends
+            ),
             "observations": [
                 "Los precios pueden variar según disponibilidad",
                 "Se recomienda reservar con anticipación",
@@ -191,3 +241,30 @@ class TravelAgent:
         }
         
         return budget
+        
+    def _generate_recommendations(
+        self,
+        packages: List[TravelPackage],
+        price_trends: Dict
+    ) -> List[Dict]:
+        """Generar recomendaciones basadas en análisis de precios."""
+        recommendations = []
+        
+        for package in packages:
+            if package.id in price_trends:
+                trend = price_trends[package.id]
+                
+                if trend["trend"] == "strong_decrease":
+                    recommendations.append({
+                        "type": "price_opportunity",
+                        "package_id": package.id,
+                        "message": "Precios están bajando significativamente"
+                    })
+                elif trend["best_time_to_buy"]["suggestion"] == "buy":
+                    recommendations.append({
+                        "type": "timing",
+                        "package_id": package.id,
+                        "message": f"Buen momento para comprar: {trend['best_time_to_buy']['reason']}"
+                    })
+                    
+        return recommendations
