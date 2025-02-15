@@ -1,0 +1,65 @@
+{
+    "name": "Ola",
+    "type": "retail",
+    "base_url": "https://www.ola.com.ar",
+    "requires_auth": false,
+    "selectors": {
+        "package_card": ".package-item",
+        "title": ".package-name",
+        "price": ".price-amount",
+        "duration": ".duration-text",
+        "included": ".included-list li",
+        "excluded": ".not-included-list li",
+        "accommodation": ".hotel-info",
+        "activities": ".activities-container .activity"
+    },
+    "data_patterns": {
+        "price": "AR\\$\\s*([\\d.,]+)",
+        "duration": "(\\d+)\\s*noches",
+        "rating": "([\\d.]+)\\s*estrellas"
+    },
+    "navigation": {
+        "search_page": {
+            "path": "/paquetes",
+            "steps": [
+                {
+                    "action": "navigate",
+                    "target": "search_page",
+                    "path": "/paquetes"
+                },
+                {
+                    "action": "input",
+                    "target": "destination",
+                    "selector": "#destino"
+                },
+                {
+                    "action": "date_input",
+                    "target": "departure",
+                    "selector": "#fecha-salida"
+                },
+                {
+                    "action": "click",
+                    "target": "search",
+                    "selector": ".search-button"
+                }
+            ]
+        }
+    },
+    "data_mapping": {
+        "price": {
+            "currency": "ARS",
+            "selector": ".price-amount",
+            "transform": "extract_number"
+        },
+        "duration": {
+            "selector": ".duration-text",
+            "transform": "extract_nights"
+        },
+        "accommodation": {
+            "name": ".hotel-name",
+            "category": ".hotel-stars",
+            "room_type": ".room-type",
+            "board_type": ".board-type"
+        }
+    }
+}

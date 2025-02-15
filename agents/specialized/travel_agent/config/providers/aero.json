@@ -1,0 +1,104 @@
+{
+    "name": "Aero",
+    "type": "wholesale",
+    "base_url": "https://www.aero.com.ar",
+    "requires_auth": true,
+    "auth": {
+        "type": "form",
+        "steps": [
+            {
+                "action": "navigate",
+                "target": "login_page",
+                "path": "/agencias/login"
+            },
+            {
+                "action": "input",
+                "target": "username",
+                "selector": "#agency-code",
+                "value_from": "credentials.agency_code"
+            },
+            {
+                "action": "input",
+                "target": "password",
+                "selector": "#agency-password",
+                "value_from": "credentials.password"
+            },
+            {
+                "action": "click",
+                "target": "login",
+                "selector": "#login-submit"
+            }
+        ],
+        "success_check": {
+            "selector": ".agency-dashboard",
+            "timeout": 5000
+        }
+    },
+    "selectors": {
+        "package_card": ".package-result",
+        "title": ".package-title h2",
+        "price": ".wholesale-price",
+        "retail_price": ".retail-price",
+        "duration": ".trip-duration",
+        "flight_info": ".flight-details",
+        "hotel_info": ".hotel-details",
+        "included": ".inclusions-list li",
+        "excluded": ".exclusions-list li",
+        "observations": ".package-notes"
+    },
+    "data_patterns": {
+        "price": "USD\\s*([\\d.,]+)",
+        "duration": "(\\d+)\\s*noches",
+        "flight_number": "[A-Z]{2}\\d{3,4}"
+    },
+    "navigation": {
+        "search_page": {
+            "path": "/wholesale/search",
+            "requires_auth": true,
+            "steps": [
+                {
+                    "action": "navigate",
+                    "target": "search",
+                    "path": "/wholesale/search"
+                },
+                {
+                    "action": "input",
+                    "target": "destination",
+                    "selector": "#destination-input"
+                },
+                {
+                    "action": "date_range",
+                    "target": "dates",
+                    "selectors": {
+                        "departure": "#departure-date",
+                        "return": "#return-date"
+                    }
+                }
+            ]
+        }
+    },
+    "data_mapping": {
+        "price": {
+            "currency": "USD",
+            "selector": ".wholesale-price",
+            "transform": "extract_number"
+        },
+        "retail_price": {
+            "currency": "USD",
+            "selector": ".retail-price",
+            "transform": "extract_number"
+        },
+        "flight_info": {
+            "outbound": {
+                "flight_number": ".outbound-flight .flight-number",
+                "departure": ".outbound-flight .departure-time",
+                "arrival": ".outbound-flight .arrival-time"
+            },
+            "return": {
+                "flight_number": ".return-flight .flight-number",
+                "departure": ".return-flight .departure-time",
+                "arrival": ".return-flight .arrival-time"
+            }
+        }
+    }
+}

@@ -4,8 +4,10 @@ Core implementation of the Travel Agent.
 
 from typing import List, Dict, Optional
 from datetime import datetime
-from langchain.tools import BaseTool
-from langchain.agents import AgentExecutor
+import asyncio
+import logging
+import os
+from pathlib import Path
 
 try:
     from ..core_system.knowledge_base import KnowledgeBase
@@ -13,36 +15,45 @@ except ImportError:
     # Para pruebas, usamos el mock
     from .tests.mocks.knowledge_base import MockKnowledgeBase as KnowledgeBase
 
-from .providers import TourismProvider
-from .schemas import TravelPackage, Accommodation, Activity
+from .provider_manager import ProviderManager
 from .browser_manager import BrowserManager
-from .tests.mocks.browser_use import BrowserAgent
-from pydantic import HttpUrl
-from .providers import ExtractionRules
+from .schemas import TravelPackage, Accommodation, Activity
 
 class TravelAgent:
     """
     Specialized agent for processing travel and tourism information.
     
     This agent can:
-    1. Search and extract information from tourism providers using browser-use
+    1. Search and extract information from tourism providers
     2. Compare and analyze travel packages
-    3. Maintain updated information about destinations
-    4. Process and validate travel-related data
+    3. Generate customized budgets
+    4. Track price changes and send alerts
     """
     
     def __init__(
         self,
         knowledge_base: KnowledgeBase,
-        providers: Optional[List[TourismProvider]] = None,
         browser_config: Optional[Dict] = None,
+        provider_credentials: Optional[Dict[str, Dict]] = None,
         llm_model: str = "gpt-4"
     ):
         self.knowledge_base = knowledge_base
-        self.providers = providers or []
         self.browser_config = browser_config or {}
         self.browser_manager = BrowserManager(llm_model=llm_model)
         
+        # Configurar gestor de proveedores
+        config_dir = os.path.join(
+            Path(__file__).parent.parent,
+            "config"
+        )
+        self.provider_manager = ProviderManager(
+            browser_manager=self.browser_manager,
+            config_dir=config_dir,
+            credentials=provider_credentials
+        )
+        
+        self.logger = logging.getLogger(__name__)
+    
     async def search_packages(
         self,
         destination: str,
@@ -50,197 +61,133 @@ class TravelAgent:
         preferences: Optional[Dict] = None
     ) -> List[TravelPackage]:
         """
-        Search for travel packages across all registered providers.
+        Buscar paquetes en todos los proveedores disponibles.
         
         Args:
-            destination: Target destination
-            dates: Optional date range for the trip
-            preferences: Optional user preferences
+            destination: Destino del viaje
+            dates: Fechas de salida y regreso
+            preferences: Preferencias específicas
             
         Returns:
-            List of matching travel packages
+            Lista combinada de paquetes de todos los proveedores
         """
         all_packages = []
-        dates = dates or {}
         
-        # Search across all providers
-        for provider in self.providers:
-            try:
-                # Use provider's search_packages method
-                raw_packages = await provider.search_packages(
-                    destination=destination,
-                    start_date=dates.get("start", ""),
-                    end_date=dates.get("end", ""),
-                    preferences=preferences or {}
-                )
-                
-                # Validate and process packages
-                for package_data in raw_packages:
-                    if await provider.validate_package(package_data):
-                        package = TravelPackage(**package_data)
-                        all_packages.append(package)
-                        
-            except Exception as e:
-                # Log error but continue with other providers
-                print(f"Error extracting data from {provider.name}: {str(e)}")
-                
+        # Buscar en paralelo en todos los proveedores
+        search_tasks = [
+            self.provider_manager.search_packages(
+                provider_name,
+                destination,
+                dates,
+                preferences
+            )
+            for provider_name in self.provider_manager.providers.keys()
+        ]
+        
+        results = await asyncio.gather(*search_tasks, return_exceptions=True)
+        
+        for provider_packages in results:
+            if isinstance(provider_packages, Exception):
+                self.logger.error(f"Error searching packages: {str(provider_packages)}")
+                continue
+            all_packages.extend(provider_packages)
+        
         return all_packages
-        
-    async def analyze_provider(
-        self,
-        provider_url: str
-    ) -> TourismProvider:
+    
+    def compare_packages(self, packages: List[TravelPackage]) -> Dict:
         """
-        Analyze a new tourism provider website and extract relevant information.
+        Comparar paquetes y generar análisis.
         
         Args:
-            provider_url: URL of the tourism provider
+            packages: Lista de paquetes a comparar
             
         Returns:
-            Processed provider information
-        """
-        # Use browser-use to analyze provider website
-        task = f"""
-        1. Navigate to {provider_url}
-        2. Extract the following information:
-           - Provider name
-           - Available destinations
-           - Types of packages offered
-           - Booking policies
-           - Contact information
-        3. Return the data in JSON format
-        """
-        
-        agent = BrowserAgent(
-            task=task,
-            llm=self.browser_manager.llm
-        )
-        
-        await agent.navigate(provider_url)
-        data = await agent.extract_data({
-            "name": ".provider-name",
-            "destinations": ".destinations-list",
-            "packages": ".package-types",
-            "policies": ".booking-policies",
-            "contact": ".contact-info"
-        })
-        
-        # Create and return provider instance
-        provider = TourismProvider(
-            name=data["name"],
-            base_url=HttpUrl(provider_url),
-            supported_destinations=data["destinations"],
-            last_updated=datetime.now(),
-            extraction_rules=ExtractionRules()
-        )
-        
-        self.providers.append(provider)
-        return provider
-        
-    async def compare_packages(
-        self,
-        packages: List[TravelPackage]
-    ) -> Dict:
-        """
-        Compare multiple travel packages and provide analysis.
-        
-        Args:
-            packages: List of packages to compare
-            
-        Returns:
-            Comparison analysis including:
-            - Price comparison
-            - Value analysis
-            - Feature comparison
-            - Recommendations
+            Diccionario con análisis comparativo
         """
         if not packages:
-            return {"error": "No packages to compare"}
+            return {}
             
         analysis = {
-            "price_analysis": self._analyze_prices(packages),
-            "features_comparison": self._compare_features(packages),
-            "value_ranking": self._rank_by_value(packages),
-            "recommendations": self._generate_recommendations(packages)
+            "price_range": {
+                "min": min(p.price for p in packages),
+                "max": max(p.price for p in packages),
+                "avg": sum(p.price for p in packages) / len(packages)
+            },
+            "duration_range": {
+                "min": min(p.duration for p in packages),
+                "max": max(p.duration for p in packages)
+            },
+            "providers": list(set(p.provider for p in packages)),
+            "best_value": None,
+            "luxury_option": None,
+            "budget_option": None
         }
+        
+        # Encontrar mejores opciones
+        sorted_by_price = sorted(packages, key=lambda p: p.price)
+        analysis["budget_option"] = sorted_by_price[0]
+        analysis["luxury_option"] = sorted_by_price[-1]
+        
+        # Calcular mejor valor (relación precio/duración/servicios)
+        def calculate_value_score(package):
+            included_services = len(package.included_services)
+            price_per_night = package.price / package.duration if package.duration else float('inf')
+            return included_services / price_per_night if price_per_night else 0
+            
+        analysis["best_value"] = max(packages, key=calculate_value_score)
         
         return analysis
+    
+    def generate_budget(
+        self,
+        packages: List[TravelPackage],
+        preferences: Dict
+    ) -> Dict:
+        """
+        Generar presupuesto personalizado.
         
-    def _analyze_prices(self, packages: List[TravelPackage]) -> Dict:
-        """Analyze price distribution and variations."""
-        prices = [p.price for p in packages]
-        return {
-            "min_price": min(prices),
-            "max_price": max(prices),
-            "avg_price": sum(prices) / len(prices),
-            "price_range": max(prices) - min(prices)
+        Args:
+            packages: Lista de paquetes disponibles
+            preferences: Preferencias del cliente
+            
+        Returns:
+            Presupuesto detallado con opciones
+        """
+        analysis = self.compare_packages(packages)
+        max_budget = preferences.get("max_budget", float('inf'))
+        min_nights = preferences.get("min_nights", 0)
+        
+        # Filtrar paquetes según preferencias
+        suitable_packages = [
+            p for p in packages
+            if p.price <= max_budget and p.duration >= min_nights
+        ]
+        
+        if not suitable_packages:
+            return {
+                "status": "no_matches",
+                "message": "No se encontraron paquetes que cumplan con los requisitos"
+            }
+        
+        # Organizar opciones
+        budget = {
+            "status": "success",
+            "options": {
+                "recommended": analysis["best_value"],
+                "economic": analysis["budget_option"],
+                "premium": analysis["luxury_option"]
+            },
+            "price_analysis": analysis["price_range"],
+            "available_dates": list(set(
+                p.dates["departure"]
+                for p in suitable_packages
+                if p.dates and "departure" in p.dates
+            )),
+            "observations": [
+                "Los precios pueden variar según disponibilidad",
+                "Se recomienda reservar con anticipación",
+                "Consultar políticas de cancelación de cada proveedor"
+            ]
         }
         
-    def _compare_features(self, packages: List[TravelPackage]) -> Dict:
-        """Compare included features and services."""
-        feature_comparison = {}
-        for package in packages:
-            features = {
-                "accommodation": package.accommodation.type if package.accommodation else None,
-                "activities": len(package.activities),
-                "included_services": package.included_services,
-                "duration": package.duration
-            }
-            feature_comparison[package.id] = features
-        return feature_comparison
-        
-    def _rank_by_value(self, packages: List[TravelPackage]) -> List[Dict]:
-        """Rank packages by value for money."""
-        ranked = []
-        for package in packages:
-            value_score = self._calculate_value_score(package)
-            ranked.append({
-                "package_id": package.id,
-                "value_score": value_score,
-                "price": package.price
-            })
-        return sorted(ranked, key=lambda x: x["value_score"], reverse=True)
-        
-    def _calculate_value_score(self, package: TravelPackage) -> float:
-        """Calculate a value score based on features and price."""
-        base_score = 100
-        
-        # Add points for included features
-        if package.accommodation:
-            base_score += 20
-        base_score += len(package.activities) * 5
-        base_score += len(package.included_services) * 2
-        
-        # Normalize by price and duration
-        value_score = base_score / (package.price / package.duration)
-        return round(value_score, 2)
-        
-    def _generate_recommendations(self, packages: List[TravelPackage]) -> List[Dict]:
-        """Generate personalized recommendations."""
-        recommendations = []
-        
-        # Best value
-        value_rankings = self._rank_by_value(packages)
-        if value_rankings:
-            best_value = next((p for p in packages if p.id == value_rankings[0]["package_id"]), None)
-            if best_value:
-                recommendations.append({
-                    "category": "Best Value",
-                    "package_id": best_value.id,
-                    "reason": "Highest value for money based on included features and price"
-                })
-        
-        # Most comprehensive
-        most_activities = max(packages, key=lambda p: len(p.activities))
-        recommendations.append({
-            "category": "Most Comprehensive",
-            "package_id": most_activities.id,
-            "reason": f"Includes the most activities ({len(most_activities.activities)})"
-        })
-        
-        return recommendations
-        
-    def _parse_provider_info(self, raw_data: Dict) -> Dict:
-        """Parse and validate provider information."""
-        # TODO: Implement provider info parsing
-        return raw_data
+        return budget

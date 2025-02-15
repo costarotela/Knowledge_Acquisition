@@ -49,7 +49,8 @@ AGENT_MAPPING = {
     "custom_rag_agent": "rag_agent",
     "github_agent": "github_agent",
     "web_research_agent": "web_research_agent",
-    "youtube_agent": "youtube_agent"
+    "youtube_agent": "youtube_agent",
+    "travel_agent": "travel_agent"
 }
 
 def create_standard_structure(agent_dir: Path):
