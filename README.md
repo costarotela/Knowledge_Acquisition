@@ -10,32 +10,36 @@ El Knowledge Acquisition System es una plataforma avanzada diseñada para extrae
 
 ```
 Knowledge_Acquisition/
-├── core_system/                # Núcleo del Sistema
-│   ├── agent_orchestrator/     # Coordinación de Agentes
-│   ├── knowledge_base/         # Base de Conocimiento
-│   │   ├── vector_db/         # Base Vectorial
-│   │   ├── graph_db/          # Base de Grafos
-│   │   └── raw_data/          # Datos Raw
-│   ├── multimodal_processor/   # Procesador Multimodal
-│   └── monitoring/            # Sistema de Monitoreo
-│
-├── agents/                     # Agentes Especializados
-│   ├── youtube_agent/         # Agente YouTube
-│   ├── github_agent/          # Agente GitHub
-│   ├── web_research_agent/    # Agente Web
-│   ├── academic_agent/        # Agente Académico
-│   ├── social_media_agent/    # Agente de Redes Sociales
-│   └── custom_rag_agent/      # Agente RAG
-│
-├── admin_interface/           # Interface Administrativa
-│   ├── knowledge_explorer/    # Explorador de Conocimiento
-│   ├── performance_monitor/   # Monitor de Rendimiento
-│   └── validation_tools/      # Herramientas de Validación
-│
-├── api/                       # API Layer
-├── models/                    # Modelos ML
-├── docs/                      # Documentación
-└── tests/                     # Tests
+├── agents/                    # Sistema de agentes especializados
+│   ├── config/               # Configuración global de agentes
+│   ├── core/                 # Clases base e interfaces
+│   └── specialized/          # Agentes especializados
+│       ├── academic_agent/   # Agente para investigación académica
+│       ├── github_agent/     # Agente para análisis de GitHub
+│       ├── rag_agent/        # Agente RAG personalizado
+│       ├── social_media_agent/ # Agente para redes sociales
+│       ├── travel_agent/     # Agente para búsqueda de viajes
+│       ├── web_research_agent/ # Agente para investigación web
+│       └── youtube_agent/    # Agente para análisis de YouTube
+├── core_system/              # Sistema central
+├── docs/                     # Documentación
+└── tests/                    # Pruebas de integración
+```
+
+### Estructura Estándar de Agentes
+
+Cada agente especializado sigue una estructura estándar:
+
+```
+specialized/[agent_name]/
+├── config/                 # Configuración específica del agente
+├── core/                  # Implementación principal
+│   ├── agent.py          # Clase principal del agente
+│   └── interfaces.py     # Interfaces específicas
+├── processors/           # Procesadores de datos
+├── schemas/             # Modelos de datos
+├── knowledge/          # Base de conocimiento específica
+└── tests/              # Pruebas unitarias
 ```
 
 ## 🚀 Características Principales
@@ -82,6 +86,59 @@ Los agentes especializados siguen el patrón Agentic RAG (Retrieval-Augmented Ge
 - `reasoning.py`: Análisis de contenido y credibilidad
 - `knowledge_manager.py`: Gestión de conocimiento multimedia
 - `schemas.py`: Modelos de datos para videos
+
+## Interfaz Administrativa
+
+La interfaz administrativa proporciona una vista unificada del sistema con módulos que pueden estar en diferentes estados de implementación:
+
+```
+admin_interface/
+├── components/          # Componentes reutilizables de UI
+├── config/             # Configuración de módulos y estados
+├── pages/              # Páginas de módulos individuales
+└── app.py             # Aplicación principal
+```
+
+### Estados de Módulos
+
+Los módulos administrativos pueden estar en los siguientes estados:
+
+- 🔲 `PLANNED`: Planificado pero no implementado
+- 🛠️ `IN_DEVELOPMENT`: En desarrollo activo
+- 🧪 `TESTING`: En fase de pruebas
+- 🔄 `BETA`: Funcional pero en beta
+- ✅ `PRODUCTION`: Completamente funcional
+- ⛔ `DEPRECATED`: Obsoleto/Deprecado
+
+### Módulos Disponibles
+
+1. **Knowledge Explorer** (🛠️ En Desarrollo)
+   - Exploración visual de la base de conocimiento
+   - Visualización de relaciones entre entidades
+   - Búsqueda y filtrado avanzado
+
+2. **Performance Monitor** (🔲 Planificado)
+   - Monitoreo en tiempo real de agentes
+   - Métricas de rendimiento del sistema
+   - Alertas y notificaciones
+
+3. **Validation Tools** (🧪 En Pruebas)
+   - Validación de datos y resultados
+   - Herramientas de control de calidad
+   - Reportes de validación
+
+4. **Agent Manager** (🔲 Planificado)
+   - Gestión de agentes especializados
+   - Configuración y monitoreo
+   - Control de estados y tareas
+
+### Características de la Interfaz
+
+- **Visualización Progresiva**: Los módulos se muestran aunque no estén completamente implementados
+- **Control de Estado**: Sistema de feature flags para habilitar/deshabilitar módulos
+- **Dependencias**: Gestión automática de dependencias entre módulos
+- **Filtros**: Capacidad de filtrar por estado y tags
+- **Métricas**: Visualización de cobertura de pruebas y fechas de implementación
 
 ## Investigadores Especializados
 
@@ -408,6 +465,87 @@ results = await agent.query_knowledge(
    - Expandir ejemplos de uso
    - Añadir diagramas de arquitectura
    - Documentar patrones de integración
+
+## Instalación y Configuración
+
+### Entornos Conda
+
+El proyecto utiliza dos entornos conda específicos:
+
+1. **knowledge-acquisition** (Principal)
+   ```bash
+   conda create -n knowledge-acquisition python=3.13
+   conda activate knowledge-acquisition
+   pip install -r requirements.txt
+   pip install -r admin_interface/requirements.txt
+   ```
+   - Entorno completo para desarrollo y producción
+   - Incluye CUDA/PyTorch y procesamiento multimedia
+   - Contiene todas las dependencias necesarias
+
+2. **knowledge-acq-test** (Testing)
+   ```bash
+   conda create -n knowledge-acq-test python=3.13
+   conda activate knowledge-acq-test
+   pip install -r requirements-test.txt
+   ```
+   - Entorno ligero solo para pruebas
+   - Dependencias mínimas sin CUDA/PyTorch
+   - Ideal para correcciones rápidas
+
+### Interfaz Administrativa
+
+Para ejecutar la interfaz administrativa:
+
+```bash
+# Activar entorno principal
+conda activate knowledge-acquisition
+
+# Iniciar la interfaz
+cd admin_interface
+streamlit run app.py
+```
+
+La interfaz estará disponible en `http://localhost:8501`
+
+#### Módulos Disponibles
+
+Los módulos se muestran en la interfaz según su estado de implementación:
+
+1. **Knowledge Explorer** (🛠️ En Desarrollo)
+   ```python
+   # Ejemplo de uso
+   from admin_interface.pages.knowledge_explorer import KnowledgeGraph
+   
+   graph = KnowledgeGraph()
+   graph.add_node("Python", {"type": "language"})
+   graph.add_node("ML", {"type": "field"})
+   graph.add_edge("Python", "ML", {"type": "used_in"})
+   ```
+
+2. **Performance Monitor** (🔲 Planificado)
+   - Monitoreo en tiempo real
+   - Métricas del sistema
+   - Alertas configurables
+
+3. **Validation Tools** (🧪 En Pruebas)
+   - Validación de datos
+   - Control de calidad
+   - Reportes automáticos
+
+4. **Agent Manager** (🔲 Planificado)
+   - Gestión de agentes
+   - Configuración centralizada
+   - Monitoreo de estados
+
+#### Desarrollo de Módulos
+
+Para desarrollar un nuevo módulo:
+
+1. Crear el módulo en `admin_interface/pages/`
+2. Agregar pruebas en `admin_interface/tests/`
+3. Actualizar `module_status.py` con la configuración
+4. Ejecutar `scripts/update_module_status.py` para actualizar estados
 
 ## Sistema de Validación y Síntesis
 
@@ -861,7 +999,7 @@ export LEARNING_EPOCHS=10
 
 1. Crear y activar el entorno conda principal:
 ```bash
-conda create -n knowledge-acquisition python=3.10
+conda create -n knowledge-acquisition python=3.13
 conda activate knowledge-acquisition
 ```
 
