@@ -26,6 +26,7 @@ bnnumerizer==0.0.2
 bnunicodenormalizer==0.1.7
 Brotli @ file:///croot/brotli-split_1736182456865/work
 build==1.2.2.post1
+browser-use>=0.1.0
 cachetools==5.5.1
 catalogue==2.0.10
 certifi @ file:///croot/certifi_1738623731865/work/certifi
@@ -262,6 +263,7 @@ pytube==15.0.0
 pytz==2025.1
 pyvis==0.3.2
 PyYAML @ file:///croot/pyyaml_1728657952215/work
+playwright>=1.40.0
 realtime==2.3.0
 referencing==0.36.2
 regex==2024.11.6
