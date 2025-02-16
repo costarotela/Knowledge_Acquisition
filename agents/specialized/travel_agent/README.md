@@ -1,254 +1,190 @@
-# AI Travel Agent
+# Agente de Viajes
 
-Sistema inteligente para búsqueda, análisis y generación de presupuestos de viajes.
+Agente de IA avanzado para asistencia en ventas de viajes, con capacidades RAG y análisis en tiempo real.
 
-## Características Principales
+## Características
 
-### 1. Extracción de Datos
-- Soporte para múltiples proveedores de viajes
-- Extracción de listas con paginación y scroll infinito
-- Monitoreo de cambios en tiempo real
-- Rate limiting y caché configurable
-- Extracción de tablas y datos estructurados
-- Manejo robusto de errores y reintentos
+- **Asistente de Ventas Inteligente**
+  - Procesamiento de instrucciones del vendedor
+  - Generación de presupuestos personalizados
+  - Refinamiento iterativo según feedback
+  - Búsqueda semántica de paquetes con lenguaje natural
+  - Integración con múltiples proveedores (Aero, Despegar)
 
-### 2. Análisis Avanzado
-- Segmentación de paquetes mediante clustering
-- Análisis de tendencias de precios
-- Cálculo de métricas estadísticas
-- Generación de insights personalizados
-- Recomendaciones basadas en preferencias
-- Análisis de sentimiento de reseñas
+- **Análisis Avanzado**
+  - Comparación de precios y condiciones
+  - Detección de oportunidades
+  - Análisis de temporadas y tendencias
+  - Cálculo de similitud entre paquetes usando embeddings
 
-### 3. Gestión de Ventas
-- Manejo de sesiones de venta
-- Refinamiento iterativo de búsquedas
-- Generación de presupuestos personalizados
-- Seguimiento de interacciones
-- Reportes detallados de ventas
-- Historial de búsquedas y preferencias
+- **Base de Datos y Almacenamiento**
+  - Supabase para almacenamiento estructurado
+  - Tablas optimizadas para paquetes, presupuestos y sesiones
+  - Historial de precios para análisis de tendencias
+  - Almacenamiento vectorial de embeddings para búsqueda semántica
+  - Sistema de caché con TTL para optimizar búsquedas
 
-## Requisitos
+- **Generación de Presupuestos**
+  - Templates personalizables con Jinja2
+  - Perfiles de cliente predefinidos
+  - Múltiples formatos de salida (HTML, PDF)
+  - Estilos adaptables por tipo de cliente
+  - Internacionalización de monedas y fechas
+
+- **RAG y Aprendizaje Continuo**
+  - Almacenamiento vectorial de conocimiento
+  - Búsqueda semántica de paquetes similares
+  - Mejora continua de recomendaciones
+
+## Requisitos del Sistema
 
 - Python 3.11 o superior
-- Node.js 18+ (para Playwright)
-- Conda (recomendado para gestión de entornos)
-
-### Dependencias Principales
-- browser-use >= 0.1.37
-- playwright >= 1.40
-- pydantic >= 2.10.4
-- pytest >= 7.4.3
-- pytest-asyncio >= 0.23.2
-- pytest-cov >= 4.1.0
-- langchain-openai >= 0.0.3
+- Conda (Miniconda o Anaconda)
+- Node.js 18 o superior (para algunas funcionalidades de Playwright)
 
 ## Instalación
 
-1. Crear entorno conda:
+1. Clonar el repositorio:
 ```bash
-conda create -n knowledge-acquisition python=3.11
-conda activate knowledge-acquisition
+git clone https://github.com/costarotela/Knowledge_Acquisition.git
+cd Knowledge_Acquisition/agents/specialized/travel_agent
 ```
 
-2. Instalar dependencias:
+2. Ejecutar el script de configuración del entorno:
 ```bash
-pip install -r requirements.txt
-playwright install
+./scripts/setup_environment.sh
 ```
 
-3. Verificar la instalación:
+Este script:
+- Crea un entorno conda llamado `travel-agent-py311` con Python 3.11
+- Instala todas las dependencias necesarias
+- Configura el archivo `.env` con las variables de entorno requeridas
+- Instala los navegadores necesarios para Playwright
+
+3. Activar el entorno conda:
 ```bash
-pytest tests/
+conda activate travel-agent-py311
+```
+
+4. Configurar las variables de entorno en el archivo `.env`:
+```bash
+OPENAI_API_KEY=tu_clave_de_openai          # Para generación de embeddings
+PUBLIC_SUPABASE_URL=tu_url_de_supabase     # URL de Supabase
+SUPABASE_SERVICE_KEY=tu_clave_de_supabase  # Clave de servicio de Supabase
 ```
 
 ## Estructura del Proyecto
 
 ```
 travel_agent/
+├── config/                 # Configuración
+│   └── providers/         # Configuración de proveedores
+│       ├── aero.json      # Configuración Aero
+│       └── despegar.json  # Configuración Despegar
 ├── core/                   # Componentes principales
-│   ├── analysis_engine.py  # Motor de análisis
-│   ├── browser_manager.py  # Gestión de navegación
-│   ├── sales_assistant.py  # Asistente de ventas
+│   ├── agent.py           # Agente principal
+│   ├── analysis_engine.py # Motor de análisis
+│   ├── browser_manager.py # Gestor de navegación
+│   ├── cache_manager.py   # Gestor de caché
+│   ├── budget_engine.py   # Motor de presupuestos
+│   ├── price_monitor.py   # Monitor de precios
+│   ├── sales_assistant.py # Asistente de ventas
+│   ├── storage_manager.py # Gestor de almacenamiento
 │   └── schemas.py         # Modelos de datos
-├── tests/                 # Tests unitarios y de integración
-│   ├── test_analysis_engine.py
-│   ├── test_browser_manager.py
-│   └── test_sales_assistant.py
-├── config/               # Configuraciones
-│   ├── providers/       # Configuración de proveedores
-│   └── settings.py      # Configuración general
-├── scripts/             # Scripts de utilidad
-│   └── update.sh       # Script de actualización
-├── cache/              # Caché de datos
-└── knowledge/         # Base de conocimiento
+├── templates/             # Templates de presupuestos
+│   ├── styles/           # Estilos CSS
+│   ├── partials/         # Componentes parciales
+│   ├── profiles.json     # Perfiles de cliente
+│   └── default.html      # Template principal
+├── scripts/               # Scripts de utilidad
+│   ├── setup_environment.sh
+│   ├── init_supabase.sql
+│   ├── load_sample_data.py
+│   └── search_packages.py
+└── tests/                 # Pruebas
 ```
 
 ## Uso
 
-### 1. Configuración de Proveedores
+### Búsqueda de Paquetes
 
 ```python
-from core.schemas import ProviderConfig
+from travel_agent.scripts.search_packages import search_packages
 
-config = ProviderConfig(
-    name="example_provider",
-    type="travel",
-    base_url="https://example.com",
-    requires_auth=False,
-    selectors={
-        "package_list": ".package-item",
-        "price": ".price",
-        "title": ".title"
-    },
-    data_patterns={
-        "price": r"\$(\d+)",
-        "date": r"(\d{4}-\d{2}-\d{2})"
-    },
-    extraction={
-        "list_mode": "pagination",
-        "max_items": 100,
-        "delay": 1
-    }
+# Búsqueda con lenguaje natural
+resultados = search_packages(
+    "Busco un viaje a la playa con actividades acuáticas para 2 personas"
 )
+
+# Los resultados incluyen paquetes relevantes ordenados por similitud
+for paquete in resultados:
+    print(f"Título: {paquete.title}")
+    print(f"Precio: ${paquete.price}")
+    print(f"Actividades: {paquete.activities}")
+    print("---")
 ```
 
-### 2. Extracción de Datos
+### Generación de Presupuestos
 
 ```python
-from core.browser_manager import BrowserManager
+from travel_agent.core.budget_engine import BudgetEngine
+from travel_agent.core.schemas import CustomerProfile
 
-# Inicializar el gestor con configuración personalizada
-browser = BrowserManager(
-    llm_model="gpt-4",  # Modelo de lenguaje para extracción inteligente
-    cache_dir="data/cache",  # Directorio de caché
-    cache_ttl=3600,  # Tiempo de vida del caché en segundos
-    headless=True  # Modo sin interfaz gráfica
+# Crear motor de presupuestos
+engine = BudgetEngine(locale="es_AR", currency="USD")
+
+# Definir perfil del cliente
+cliente = CustomerProfile(
+    name="Juan Pérez",
+    type="premium",  # Tipos: default, premium, corporate, family
+    email="juan@example.com"
 )
-
-# Extraer datos de una tabla
-table_data = await browser.extract_table_data(
-    url="https://example.com/packages",
-    table_selector="table.packages",
-    column_map={
-        "title": "td.package-title",
-        "price": "td.package-price",
-        "duration": "td.package-duration"
-    }
-)
-
-# Extraer datos de una lista
-list_data = await browser.extract_list_data(
-    url="https://example.com/offers",
-    list_selector=".offer-list",
-    item_selectors={
-        "title": ".offer-title",
-        "description": ".offer-description",
-        "price": ".offer-price"
-    }
-)
-
-# Interactuar con la página
-await browser.interact_with_page(
-    url="https://example.com/search",
-    interactions=[
-        {
-            "action": "type",
-            "selector": "#destination",
-            "target": "Cancun"
-        },
-        {
-            "action": "click",
-            "selector": "#search-btn"
-        },
-        {
-            "action": "wait",
-            "target": "2"  # Esperar 2 segundos
-        }
-    ]
-)
-
-# Extraer contenido dinámico con validación de patrones
-result = await browser.extract_dynamic_content(
-    url="https://example.com/details",
-    selectors={
-        "price": ".price-tag",
-        "dates": ".available-dates"
-    },
-    data_patterns={
-        "price": r"\$(\d+)",
-        "dates": r"(\d{2}/\d{2}/\d{4})"
-    },
-    scroll=True,  # Activar scroll automático
-    wait_for=".content-loaded"  # Esperar elemento específico
-)
-
-# Cerrar el navegador al finalizar
-await browser.close()
-```
-
-### 3. Análisis de Paquetes
-
-```python
-from core.analysis_engine import AnalysisEngine
-from core.schemas import SalesQuery
-
-query = SalesQuery(
-    client_name="Test Client",
-    destination="Cancun",
-    dates={
-        "departure": "2025-03-01",
-        "return": "2025-03-08"
-    },
-    preferences={
-        "max_budget": 2000,
-        "min_nights": 5,
-        "activities": ["snorkel", "beach"]
-    }
-)
-
-engine = AnalysisEngine()
-analysis = await engine.analyze_packages(query, packages)
-insights = analysis.insights
-recommendations = analysis.recommendations
-```
-
-### 4. Gestión de Ventas
-
-```python
-from core.sales_assistant import SalesAssistant
-from core.schemas import SessionState
-
-assistant = SalesAssistant()
-session = SessionState(client_name="Test Client")
-
-# Iniciar interacción
-await assistant.start_interaction(session)
-
-# Refinar búsqueda
-feedback = {"price": "too high", "activities": "more beach activities"}
-await assistant.refine_search(session, feedback)
 
 # Generar presupuesto
-budget = await assistant.generate_budget(session)
+presupuesto_html = engine.generate_budget(
+    packages=paquetes,
+    customer_profile=cliente,
+    template_name="default.html",
+    output_format="html"
+)
+
+# También se puede generar en PDF
+presupuesto_pdf = engine.generate_budget(
+    packages=paquetes,
+    customer_profile=cliente,
+    template_name="default.html",
+    output_format="pdf"
+)
+```
+
+## Variables de Entorno
+
+```bash
+OPENAI_API_KEY=tu_clave_de_openai          # Para generación de embeddings
+PUBLIC_SUPABASE_URL=tu_url_de_supabase     # URL de Supabase
+SUPABASE_SERVICE_KEY=tu_clave_de_supabase  # Clave de servicio de Supabase
+```
+
+## Dependencias Adicionales
+
+```bash
+# Para generación de PDFs
+apt-get install weasyprint
+
+# Para internacionalización
+pip install babel
+
+# Para templates
+pip install jinja2
 ```
 
 ## Seguridad
 
-El proyecto utiliza el paquete `safety` para verificar vulnerabilidades en las dependencias. Para ejecutar una verificación:
-
-```bash
-safety check
-```
-
-## Contribuciones
-
-1. Fork el repositorio
-2. Cree una rama para su característica (`git checkout -b feature/amazing-feature`)
-3. Commit sus cambios (`git commit -m 'Add some amazing feature'`)
-4. Push a la rama (`git push origin feature/amazing-feature`)
-5. Abra un Pull Request
+- Versiones de dependencias actualizadas y seguras
+- Manejo seguro de claves API mediante variables de entorno
+- Validación de datos con Pydantic
+- Pruebas automatizadas para verificar comportamiento
 
 ## Licencia
 
-Este proyecto está licenciado bajo la Licencia MIT - vea el archivo [LICENSE](LICENSE) para más detalles.
+Este proyecto está licenciado bajo la Licencia MIT.
