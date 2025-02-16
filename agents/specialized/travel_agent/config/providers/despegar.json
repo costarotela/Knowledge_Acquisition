@@ -1,0 +1,92 @@
+{
+    "name": "Despegar",
+    "type": "retail",
+    "base_url": "https://www.despegar.com.ar",
+    "requires_auth": false,
+    "selectors": {
+        "package_card": ".package-wrapper",
+        "title": ".package-title",
+        "price": ".price-amount",
+        "duration": ".duration-text",
+        "flight_info": ".flight-details",
+        "hotel_info": ".accommodation-details",
+        "included": ".inclusions ul li",
+        "excluded": ".exclusions ul li",
+        "rating": ".rating-score",
+        "reviews": ".review-count"
+    },
+    "data_patterns": {
+        "price": "ARS\\s*([\\d.,]+)",
+        "duration": "(\\d+)\\s*noches",
+        "rating": "(\\d+(?:\\.\\d+)?)"
+    },
+    "navigation": {
+        "search_page": {
+            "path": "/paquetes",
+            "requires_auth": false,
+            "steps": [
+                {
+                    "action": "navigate",
+                    "target": "search",
+                    "path": "/paquetes"
+                },
+                {
+                    "action": "input",
+                    "target": "destination",
+                    "selector": "#destination-box input"
+                },
+                {
+                    "action": "date_range",
+                    "target": "dates",
+                    "selectors": {
+                        "departure": "#departure-date-input",
+                        "return": "#return-date-input"
+                    }
+                },
+                {
+                    "action": "click",
+                    "target": "search_button",
+                    "selector": ".search-button"
+                }
+            ]
+        }
+    },
+    "data_mapping": {
+        "price": {
+            "currency": "ARS",
+            "selector": ".price-amount",
+            "transform": "extract_number"
+        },
+        "accommodation": {
+            "name": ".hotel-name",
+            "type": ".accommodation-type",
+            "rating": ".hotel-rating",
+            "amenities": ".amenities-list li"
+        },
+        "flight": {
+            "outbound": {
+                "airline": ".outbound .airline-name",
+                "departure_time": ".outbound .departure-time",
+                "arrival_time": ".outbound .arrival-time",
+                "duration": ".outbound .flight-duration"
+            },
+            "return": {
+                "airline": ".return .airline-name",
+                "departure_time": ".return .departure-time",
+                "arrival_time": ".return .arrival-time",
+                "duration": ".return .flight-duration"
+            }
+        }
+    },
+    "rate_limits": {
+        "requests_per_minute": 30,
+        "concurrent_requests": 5
+    },
+    "cache_ttl": 1800,
+    "timeout": 45,
+    "retry_config": {
+        "max_retries": 3,
+        "delay_seconds": 2,
+        "backoff_factor": 2
+    }
+}

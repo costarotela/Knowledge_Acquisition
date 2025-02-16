@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="{{ metadata.locale[:2] }}">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Presupuesto de Viaje - {{ customer.name }}</title>
+    <style>
+        {% include 'styles/base.css' %}
+        {% if style.custom_css %}
+            {{ style.custom_css }}
+        {% endif %}
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Encabezado -->
+        <header class="header">
+            <div class="logo">
+                <img src="{{ style.logo_url|default('images/logo.png') }}" alt="Logo">
+            </div>
+            <div class="header-info">
+                <h1>Presupuesto de Viaje</h1>
+                <p class="reference">Ref: {{ metadata.generated_at|format_date }}</p>
+            </div>
+        </header>
+
+        <!-- Información del Cliente -->
+        <section class="customer-info">
+            {% include 'partials/customer_info.html' %}
+        </section>
+
+        <!-- Resumen -->
+        <section class="summary">
+            <h2>Resumen de la Propuesta</h2>
+            {% include 'partials/summary.html' %}
+        </section>
+
+        <!-- Paquetes -->
+        <section class="packages">
+            <h2>Opciones de Viaje</h2>
+            {% for package in packages %}
+                {% include 'partials/package_card.html' %}
+            {% endfor %}
+        </section>
+
+        <!-- Recomendaciones -->
+        {% if recommendations %}
+        <section class="recommendations">
+            <h2>Recomendaciones Personalizadas</h2>
+            <ul>
+                {% for rec in recommendations %}
+                    <li>{{ rec }}</li>
+                {% endfor %}
+            </ul>
+        </section>
+        {% endif %}
+
+        <!-- Términos y Condiciones -->
+        <section class="terms">
+            {% include 'partials/terms.html' %}
+        </section>
+
+        <!-- Pie de Página -->
+        <footer class="footer">
+            <p>Presupuesto válido hasta: {{ metadata.valid_until|format_date }}</p>
+            <p class="contact">{{ style.contact_info|default('Contacto: info@travel-agent.com') }}</p>
+        </footer>
+    </div>
+</body>
+</html>

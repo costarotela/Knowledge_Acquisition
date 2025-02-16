@@ -1,0 +1,109 @@
+{
+    "default": {
+        "style": {
+            "primary_color": "#2C3E50",
+            "secondary_color": "#3498DB",
+            "text_color": "#333333",
+            "background_color": "#FFFFFF",
+            "accent_color": "#E74C3C",
+            "font_family": "Arial, sans-serif",
+            "logo_url": "images/logo.png",
+            "contact_info": "Contacto: info@travel-agent.com"
+        },
+        "validity_days": 7,
+        "recommendations": [
+            "Recomendamos reservar con anticipación para obtener mejores tarifas",
+            "Consulte nuestras opciones de financiamiento",
+            "Todos los precios incluyen impuestos y tasas"
+        ]
+    },
+    "premium": {
+        "style": {
+            "primary_color": "#1A237E",
+            "secondary_color": "#0D47A1",
+            "text_color": "#212121",
+            "background_color": "#FAFAFA",
+            "accent_color": "#C2185B",
+            "font_family": "'Montserrat', Arial, sans-serif",
+            "logo_url": "images/logo_premium.png",
+            "contact_info": "Línea Premium: +54 11 5555-5555",
+            "custom_css": "
+                .package-card { 
+                    background: linear-gradient(135deg, #FAFAFA 0%, #F5F5F5 100%);
+                    border: none;
+                    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+                }
+                .package-title {
+                    font-size: 1.5rem;
+                    letter-spacing: 1px;
+                }
+            "
+        },
+        "validity_days": 14,
+        "recommendations": [
+            "Acceso exclusivo a nuestro servicio de conserjería 24/7",
+            "Traslados privados incluidos en todos los destinos",
+            "Upgrade de habitación sujeto a disponibilidad",
+            "Acceso a salas VIP en aeropuertos"
+        ]
+    },
+    "corporate": {
+        "style": {
+            "primary_color": "#263238",
+            "secondary_color": "#455A64",
+            "text_color": "#37474F",
+            "background_color": "#FFFFFF",
+            "accent_color": "#00838F",
+            "font_family": "'Roboto', Arial, sans-serif",
+            "logo_url": "images/logo_corporate.png",
+            "contact_info": "Departamento Corporativo: corporate@travel-agent.com",
+            "custom_css": "
+                .container {
+                    max-width: 1400px;
+                }
+                .package-card {
+                    border: 1px solid #CFD8DC;
+                }
+                .package-details {
+                    font-size: 0.9rem;
+                }
+            "
+        },
+        "validity_days": 30,
+        "recommendations": [
+            "Gestión centralizada de reservas corporativas",
+            "Reportes detallados de gastos por centro de costos",
+            "Políticas de viaje personalizadas",
+            "Soporte prioritario para cambios y cancelaciones"
+        ]
+    },
+    "family": {
+        "style": {
+            "primary_color": "#004D40",
+            "secondary_color": "#00796B",
+            "text_color": "#333333",
+            "background_color": "#F5F5F5",
+            "accent_color": "#FF6D00",
+            "font_family": "'Open Sans', Arial, sans-serif",
+            "logo_url": "images/logo_family.png",
+            "contact_info": "Atención Familias: family@travel-agent.com",
+            "custom_css": "
+                .package-card {
+                    border-radius: 16px;
+                    background: #FFFFFF;
+                }
+                .recommendations {
+                    background-color: #E0F2F1;
+                    border-radius: 12px;
+                }
+            "
+        },
+        "validity_days": 10,
+        "recommendations": [
+            "Actividades especiales para niños incluidas",
+            "Habitaciones familiares y conectadas disponibles",
+            "Menús infantiles en restaurantes seleccionados",
+            "Seguro de viaje familiar incluido"
+        ]
+    }
+}

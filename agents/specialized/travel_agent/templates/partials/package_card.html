@@ -1,0 +1,62 @@
+<div class="package-card">
+    <div class="package-header">
+        <h3 class="package-title">{{ package.title }}</h3>
+        <div class="package-price">
+            {{ package.price|format_currency }}
+            {% if package.price_per_day %}
+            <div class="price-per-day">
+                {{ package.price_per_day|format_currency }} por día
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    
+    <div class="package-details">
+        <div class="detail-section">
+            <h4>Fechas</h4>
+            <p>
+                <strong>Desde:</strong> {{ package.start_date|format_date }}
+                <br>
+                <strong>Hasta:</strong> {{ package.end_date|format_date }}
+            </p>
+        </div>
+        
+        {% if package.accommodation %}
+        <div class="detail-section">
+            <h4>Alojamiento</h4>
+            <p>
+                <strong>{{ package.accommodation.name }}</strong>
+                <br>
+                {{ package.accommodation.type|title }}
+                {% if package.accommodation.stars %}
+                <br>
+                {{ "⭐" * package.accommodation.stars }}
+                {% endif %}
+            </p>
+        </div>
+        {% endif %}
+        
+        {% if package.activities %}
+        <div class="detail-section">
+            <h4>Actividades ({{ package.total_activities }})</h4>
+            <ul class="activities-list">
+                {% for activity in package.activities %}
+                <li>
+                    <strong>{{ activity.title }}</strong>
+                    {% if activity.duration %}
+                    <br>
+                    <small>Duración: {{ activity.duration }}</small>
+                    {% endif %}
+                </li>
+                {% endfor %}
+            </ul>
+        </div>
+        {% endif %}
+    </div>
+    
+    {% if package.description %}
+    <div class="package-description">
+        <p>{{ package.description }}</p>
+    </div>
+    {% endif %}
+</div>

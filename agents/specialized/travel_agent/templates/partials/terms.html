@@ -1,0 +1,62 @@
+<div class="terms-content">
+    <h3>Términos y Condiciones</h3>
+    
+    <div class="terms-section">
+        <h4>Validez del Presupuesto</h4>
+        <p>Este presupuesto es válido hasta el {{ metadata.valid_until|format_date }}. Los precios están sujetos a disponibilidad y pueden variar sin previo aviso.</p>
+    </div>
+    
+    <div class="terms-section">
+        <h4>Incluye</h4>
+        <ul>
+            <li>Alojamiento según lo especificado en cada paquete</li>
+            <li>Actividades detalladas en la descripción</li>
+            <li>Impuestos y tasas locales</li>
+            {% if customer.type == 'premium' %}
+            <li>Servicio de conserjería 24/7</li>
+            <li>Traslados privados</li>
+            {% endif %}
+            {% if customer.type == 'corporate' %}
+            <li>Gestión de reportes corporativos</li>
+            <li>Soporte prioritario</li>
+            {% endif %}
+            {% if customer.type == 'family' %}
+            <li>Seguro de viaje familiar</li>
+            <li>Actividades para niños</li>
+            {% endif %}
+        </ul>
+    </div>
+    
+    <div class="terms-section">
+        <h4>No Incluye</h4>
+        <ul>
+            <li>Gastos personales</li>
+            <li>Propinas</li>
+            <li>Servicios no mencionados en el programa</li>
+        </ul>
+    </div>
+    
+    <div class="terms-section">
+        <h4>Política de Pagos</h4>
+        <ul>
+            <li>30% de seña para confirmar la reserva</li>
+            <li>Saldo restante hasta 30 días antes de la fecha de viaje</li>
+            {% if customer.type == 'corporate' %}
+            <li>Disponible facturación corporativa a 30 días</li>
+            {% endif %}
+        </ul>
+    </div>
+    
+    <div class="terms-section">
+        <h4>Política de Cancelación</h4>
+        <ul>
+            <li>Hasta 45 días antes: 100% reembolsable</li>
+            <li>44-30 días antes: 70% reembolsable</li>
+            <li>29-15 días antes: 50% reembolsable</li>
+            <li>14-0 días antes: No reembolsable</li>
+            {% if customer.type in ['premium', 'corporate'] %}
+            <li>Cambios de fecha sin cargo hasta 7 días antes</li>
+            {% endif %}
+        </ul>
+    </div>
+</div>

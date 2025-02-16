@@ -1,0 +1,29 @@
+<div class="customer-details">
+    <h3>Información del Cliente</h3>
+    <div class="info-grid">
+        <div class="info-item">
+            <strong>Nombre:</strong>
+            <span>{{ customer.name }}</span>
+        </div>
+        <div class="info-item">
+            <strong>Tipo de Cliente:</strong>
+            <span>{{ customer.type|title }}</span>
+        </div>
+        {% if customer.company %}
+        <div class="info-item">
+            <strong>Empresa:</strong>
+            <span>{{ customer.company }}</span>
+        </div>
+        {% endif %}
+        <div class="info-item">
+            <strong>Email:</strong>
+            <span>{{ customer.email }}</span>
+        </div>
+        {% if customer.phone %}
+        <div class="info-item">
+            <strong>Teléfono:</strong>
+            <span>{{ customer.phone }}</span>
+        </div>
+        {% endif %}
+    </div>
+</div>
